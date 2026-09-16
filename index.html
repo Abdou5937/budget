@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Mon budget</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#F4F6F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1217" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mon budget">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" href="./icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F6F8; --card:#FFFFFF; --ink:#141A21; --ink-2:#5A6673; --ink-3:#8C97A3;
+  --line:#E2E7EC; --line-2:#EDF0F3;
+  --rev:#18915A; --fix:#2C6BD1; --var:#DD8514; --epa:#7A56D2; --cre:#D24141;
+  --rev-w:#E4F3EC; --fix-w:#E5EDFA; --var-w:#FBEFDE; --epa-w:#EDE7FA; --cre-w:#FAE6E6;
+  --ok:#18915A; --warn:#DD8514; --bad:#D24141;
+  --r:14px; --r-s:10px;
+  --nav:72px;
+  --shadow:0 1px 2px rgba(20,26,33,.06), 0 8px 24px -12px rgba(20,26,33,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E1217; --card:#171D25; --ink:#EDF1F5; --ink-2:#9AA6B3; --ink-3:#6B7684;
+    --line:#252D37; --line-2:#1E252E;
+    --rev:#3DBF80; --fix:#5B95E8; --var:#EDA83F; --epa:#A188E8; --cre:#E86C6C;
+    --rev-w:#16291F; --fix-w:#17222F; --var-w:#2A2113; --epa-w:#221C33; --cre-w:#2C1919;
+    --ok:#3DBF80; --warn:#EDA83F; --bad:#E86C6C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E1217; --card:#171D25; --ink:#EDF1F5; --ink-2:#9AA6B3; --ink-3:#6B7684;
+  --line:#252D37; --line-2:#1E252E;
+  --rev:#3DBF80; --fix:#5B95E8; --var:#EDA83F; --epa:#A188E8; --cre:#E86C6C;
+  --rev-w:#16291F; --fix-w:#17222F; --var-w:#2A2113; --epa-w:#221C33; --cre-w:#2C1919;
+  --ok:#3DBF80; --warn:#EDA83F; --bad:#E86C6C;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-size:16px; line-height:1.45;
+  padding-bottom:calc(var(--nav) + env(safe-area-inset-bottom));
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+.num{font-family:'Barlow Semi Condensed',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+:focus-visible{outline:2px solid var(--fix);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- entête ---------- */
+.top{position:sticky;top:0;z-index:30;background:var(--paper);padding:env(safe-area-inset-top) 0 0}
+.top-in{display:flex;align-items:baseline;justify-content:space-between;padding:14px 16px 6px}
+.app-name{font-family:'Barlow Semi Condensed';font-weight:700;font-size:21px;letter-spacing:-.01em}
+.sync{font-size:12px;color:var(--ink-3)}
+.months{display:flex;gap:6px;overflow-x:auto;padding:4px 16px 12px;scrollbar-width:none}
+.months::-webkit-scrollbar{display:none}
+.m-tab{flex:0 0 auto;padding:7px 13px;border-radius:999px;border:1px solid var(--line);
+  background:var(--card);font-size:14px;font-weight:500;color:var(--ink-2)}
+.m-tab[aria-current="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.m-tab.has-data::after{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;
+  background:currentColor;margin-left:6px;vertical-align:middle;opacity:.55}
+
+main{padding:0 16px 24px;max-width:640px;margin:0 auto}
+section[hidden]{display:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:12px}
+.pad{padding:16px}
+h2{font-family:'Barlow Semi Condensed';font-size:15px;font-weight:600;color:var(--ink-2);margin:22px 0 10px}
+h3{font-family:'Barlow Semi Condensed';font-size:14px;font-weight:600;margin:0 0 10px;color:var(--ink-2)}
+
+/* ---------- bloc solde ---------- */
+.hero{padding:18px 16px 14px}
+.hero-lab{font-size:13px;color:var(--ink-2)}
+.hero-val{font-family:'Barlow Semi Condensed';font-weight:700;font-size:46px;line-height:1.05;margin:2px 0 12px}
+.hero-val.neg{color:var(--bad)}
+.hero-val.pos{color:var(--rev)}
+.split{display:flex;height:9px;border-radius:999px;overflow:hidden;background:var(--line-2);margin-bottom:10px}
+.split i{display:block;height:100%}
+.hero-legend{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-2)}
+.hero-legend b{font-family:'Barlow Semi Condensed';font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* ---------- provision ---------- */
+.prov{display:flex;align-items:center;gap:12px;padding:14px 16px;border-left:4px solid var(--epa)}
+.prov-t{flex:1;font-size:14px;color:var(--ink-2);line-height:1.3}
+.prov-v{font-family:'Barlow Semi Condensed';font-weight:700;font-size:26px;color:var(--epa);white-space:nowrap}
+
+/* ---------- lignes par type ---------- */
+.rows{padding:4px 0}
+.row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-top:1px solid var(--line-2)}
+.rows .row:first-child{border-top:0}
+.dot{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+.row-n{flex:1;font-size:15px}
+.row-sub{display:block;font-size:12px;color:var(--ink-3)}
+.row-v{font-family:'Barlow Semi Condensed';font-weight:600;font-size:18px;font-variant-numeric:tabular-nums}
+
+/* ---------- barres budget ---------- */
+.bud{padding:12px 16px;border-top:1px solid var(--line-2)}
+.bud:first-child{border-top:0}
+.bud-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px;margin-bottom:6px}
+.bud-h b{font-family:'Barlow Semi Condensed';font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.track{height:7px;border-radius:999px;background:var(--line-2);overflow:hidden}
+.track i{display:block;height:100%;border-radius:999px}
+.pct{font-size:12px;color:var(--ink-3);margin-top:4px}
+
+/* ---------- donut ---------- */
+.donut-wrap{display:flex;gap:14px;align-items:center;padding:16px}
+.donut-wrap svg{flex:0 0 122px}
+.dleg{flex:1;min-width:0;font-size:13px}
+.dleg div{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.dleg span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dleg b{font-family:'Barlow Semi Condensed';font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ---------- transactions ---------- */
+.tx{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 16px;border-top:1px solid var(--line-2)}
+.tx:first-child{border-top:0}
+.tx-b{width:4px;align-self:stretch;border-radius:3px;flex:0 0 auto}
+.tx-m{flex:1;min-width:0}
+.tx-c{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tx-d{font-size:12px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tx-v{font-family:'Barlow Semi Condensed';font-weight:600;font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.empty{padding:26px 16px;text-align:center;color:var(--ink-3);font-size:14px}
+.search{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:var(--r-s);
+  background:var(--card);margin-bottom:10px}
+
+/* ---------- boutons ---------- */
+.btn{display:block;width:100%;padding:13px;border-radius:var(--r-s);background:var(--ink);
+  color:var(--paper);font-weight:600;font-size:15px;text-align:center}
+.btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:var(--card);color:var(--bad);border:1px solid var(--line)}
+.btn+.btn{margin-top:8px}
+.btn:disabled{opacity:.45}
+.mini{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);
+  font-size:13px;font-weight:500}
+
+/* ---------- navigation ---------- */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--card);
+  border-top:1px solid var(--line);display:flex;align-items:center;
+  padding:0 4px env(safe-area-inset-bottom);height:calc(var(--nav) + env(safe-area-inset-bottom))}
+nav button{flex:1;height:var(--nav);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;font-size:11px;color:var(--ink-3);font-weight:500}
+nav button[aria-current="true"]{color:var(--ink)}
+nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round}
+.add{flex:0 0 62px!important;height:62px!important;background:var(--ink);border-radius:20px;
+  color:var(--paper)!important;margin:0 4px;box-shadow:var(--shadow)}
+.add svg{width:26px;height:26px;stroke-width:2.4}
+
+/* ---------- feuille de saisie ---------- */
+.sheet{position:fixed;inset:0;z-index:60;background:var(--paper);display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top);transform:translateY(100%);transition:transform .22s ease}
+.sheet.open{transform:none}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;
+  border-bottom:1px solid var(--line)}
+.sheet-h b{font-family:'Barlow Semi Condensed';font-size:17px;font-weight:600}
+.sheet-b{flex:1;overflow-y:auto;padding:0 16px 20px;max-width:640px;margin:0 auto;width:100%}
+.amount{text-align:center;padding:20px 0 6px}
+.amount .num{font-size:52px;font-weight:700;line-height:1}
+.amount small{display:block;font-size:13px;color:var(--ink-3);margin-top:4px}
+.pills{display:flex;gap:7px;overflow-x:auto;padding:4px 0 2px;scrollbar-width:none}
+.pills::-webkit-scrollbar{display:none}
+.pill{flex:0 0 auto;padding:9px 14px;border-radius:999px;border:1.5px solid var(--line);
+  background:var(--card);font-size:14px;font-weight:500;color:var(--ink-2)}
+.pill[aria-pressed="true"]{color:#fff;border-color:transparent}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+.chip{padding:9px 13px;border-radius:999px;border:1px solid var(--line);background:var(--card);
+  font-size:14px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.field{margin-top:14px}
+.field label{display:block;font-size:13px;color:var(--ink-2);margin-bottom:6px}
+.field input[type=text],.field input[type=date],.field input[type=number],.field select{
+  width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--card)}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;
+  padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--card)}
+.switch span{font-size:14px}
+.switch input{width:20px;height:20px;accent-color:var(--fix)}
+.pad-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.key{padding:16px 0;border-radius:var(--r-s);background:var(--card);border:1px solid var(--line);
+  font-family:'Barlow Semi Condensed';font-size:24px;font-weight:600;text-align:center}
+.key:active{background:var(--line-2)}
+.sheet-f{padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);
+  background:var(--card);max-width:640px;margin:0 auto;width:100%}
+
+/* ---------- réglages ---------- */
+.list-line{display:flex;align-items:center;gap:10px;padding:10px 16px;border-top:1px solid var(--line-2)}
+.list-line:first-child{border-top:0}
+.list-line input[type=text]{flex:1;min-width:0;padding:8px 10px;border:1px solid transparent;
+  border-radius:8px;background:transparent}
+.list-line input[type=text]:focus{border-color:var(--line);background:var(--paper)}
+.list-line input[type=number]{width:86px;padding:8px 10px;border:1px solid var(--line);
+  border-radius:8px;background:var(--paper);text-align:right;font-variant-numeric:tabular-nums}
+.x{width:30px;height:30px;border-radius:8px;color:var(--ink-3);font-size:19px;line-height:1;flex:0 0 auto}
+.add-line{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line-2)}
+.add-line input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.help{font-size:13px;color:var(--ink-2);padding:0 16px 14px;line-height:1.4}
+
+/* ---------- année ---------- */
+.y-row{display:grid;grid-template-columns:44px 1fr 78px;gap:10px;align-items:center;
+  padding:10px 16px;border-top:1px solid var(--line-2);width:100%;text-align:left}
+.y-row:first-child{border-top:0}
+.y-m{font-family:'Barlow Semi Condensed';font-weight:600;font-size:14px;color:var(--ink-2)}
+.y-bars{display:flex;flex-direction:column;gap:3px}
+.y-bars i{display:block;height:6px;border-radius:999px;min-width:2px}
+.y-v{font-family:'Barlow Semi Condensed';font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- toast ---------- */
+#toast{position:fixed;left:50%;bottom:calc(var(--nav) + 18px + env(safe-area-inset-bottom));
+  transform:translate(-50%,14px);background:var(--ink);color:var(--paper);padding:10px 18px;
+  border-radius:999px;font-size:14px;z-index:80;opacity:0;pointer-events:none;transition:.2s}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="app-name">Mon budget</div>
+    <div class="sync" id="sync">Sur cet appareil</div>
+  </div>
+  <div class="months" id="months"></div>
+</header>
+
+<main>
+  <!-- ======= MOIS ======= -->
+  <section id="v-mois">
+    <div class="card hero">
+      <div class="hero-lab">Reste ce mois-ci</div>
+      <div class="hero-val num" id="solde">0 €</div>
+      <div class="split" id="split"></div>
+      <div class="hero-legend">
+        <div>Encaissé <b id="tot-rev">0 €</b></div>
+        <div>Sorti <b id="tot-dep">0 €</b></div>
+      </div>
+    </div>
+
+    <div class="card prov">
+      <div class="prov-t">À mettre de côté pour l'URSSAF et les impôts<br>
+        <span style="color:var(--ink-3);font-size:12px" id="prov-rate"></span></div>
+      <div class="prov-v num" id="prov">0 €</div>
+    </div>
+
+    <h2>Mon épargne ce mois-ci</h2>
+    <div class="card" id="save-card"></div>
+
+    <h2>Par catégorie de flux</h2>
+    <div class="card rows" id="type-rows"></div>
+
+    <h2>Où part l'argent</h2>
+    <div class="card" id="donut-card"><div class="empty">Rien à afficher pour l'instant.</div></div>
+
+    <h2>Budgets du mois</h2>
+    <div class="card" id="budgets"></div>
+
+    <h2>Opérations</h2>
+    <input class="search" id="q" type="search" placeholder="Rechercher une opération">
+    <div class="card" id="tx-list"></div>
+    <button class="btn ghost" id="more" style="margin-top:8px" hidden>Tout afficher</button>
+    <button class="btn ghost" id="repeat" style="margin-top:8px">Reporter les charges fixes du mois précédent</button>
+  </section>
+
+  <!-- ======= ANNÉE ======= -->
+  <section id="v-annee" hidden>
+    <div class="card hero">
+      <div class="hero-lab">Solde cumulé sur l'année</div>
+      <div class="hero-val num" id="y-solde">0 €</div>
+      <div class="hero-legend">
+        <div>Encaissé <b id="y-rev">0 €</b></div>
+        <div>Sorti <b id="y-dep">0 €</b></div>
+      </div>
+    </div>
+    <div class="card pad" id="y-epa" style="font-size:14px;color:var(--ink-2);line-height:1.4"></div>
+    <h2>Mois par mois</h2>
+    <div class="card" id="y-rows"></div>
+    <h2>Totaux par catégorie de flux</h2>
+    <div class="card rows" id="y-types"></div>
+    <h2>Sauvegarde</h2>
+    <button class="btn ghost" id="export">Exporter l'année en CSV</button>
+  </section>
+
+  <!-- ======= OBJECTIFS ======= -->
+  <section id="v-obj" hidden>
+    <h2 style="margin-top:8px">Mes projets d'épargne</h2>
+    <div class="card" id="obj-list"></div>
+    <div class="card" style="margin-top:12px">
+      <div class="pad">
+        <h3>Nouveau projet</h3>
+        <div class="field"><label for="o-n">Nom du projet</label>
+          <input type="text" id="o-n" placeholder="Camionnette"></div>
+        <div class="field"><label for="o-c">Montant à atteindre</label>
+          <input type="number" id="o-c" inputmode="decimal" placeholder="8000"></div>
+        <div class="field"><label for="o-k">Alimenté par la catégorie d'épargne</label>
+          <select id="o-k"></select></div>
+        <button class="btn" id="o-add" style="margin-top:14px">Créer le projet</button>
+      </div>
+    </div>
+    <p class="help">La progression se calcule toute seule à partir des versements d'épargne que tu saisis dans la catégorie choisie.</p>
+  </section>
+
+  <!-- ======= RÉGLAGES ======= -->
+  <section id="v-reg" hidden>
+    <h2 style="margin-top:8px">Objectif d'épargne</h2>
+    <div class="card pad">
+      <div class="field"><label for="r-epa">Part de tes revenus que tu veux mettre de côté chaque mois</label>
+        <input type="number" id="r-epa" inputmode="decimal" step="1" min="0" max="80"></div>
+      <p class="help" style="padding:10px 0 0">En pourcentage. Commence bas et augmente une fois que tu as trois mois de recul.</p>
+    </div>
+
+    <h2>Provision sociale et fiscale</h2>
+    <div class="card pad">
+      <div class="field"><label for="r-prov">Pourcentage mis de côté sur chaque revenu</label>
+        <input type="number" id="r-prov" inputmode="decimal" step="0.1" min="0" max="60"></div>
+      <p class="help" style="padding:10px 0 0">Vérifie ce taux auprès de l'URSSAF : il dépend de ton activité et de l'option pour le versement libératoire. Mets 0 pour masquer le bandeau.</p>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="pad" style="padding-bottom:4px"><h3>Revenus concernés</h3></div>
+      <div id="provcats"></div>
+      <p class="help">Coche uniquement tes revenus d'indépendant. Un salaire déjà cotisé ne doit pas être coché.</p>
+    </div>
+
+    <h2>Comptes</h2>
+    <div class="card" id="accs"></div>
+
+    <h2>Catégories</h2>
+    <div id="cats"></div>
+
+    <h2>Budgets mensuels</h2>
+    <div class="card" id="budset"></div>
+    <p class="help">Laisse à zéro une catégorie que tu ne veux pas plafonner.</p>
+
+    <h2>Apparence</h2>
+    <div class="card pad">
+      <div class="field"><label for="r-theme">Thème</label>
+        <select id="r-theme">
+          <option value="auto">Automatique</option>
+          <option value="light">Clair</option>
+          <option value="dark">Sombre</option>
+        </select></div>
+    </div>
+
+    <h2>Données</h2>
+    <button class="btn ghost" id="export2">Exporter l'année en CSV</button>
+    <button class="btn danger" id="wipe" style="margin-top:8px">Effacer le mois affiché</button>
+  </section>
+</main>
+
+<nav>
+  <button data-view="v-mois" aria-current="true">
+    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+    Mois</button>
+  <button data-view="v-annee">
+    <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+    Année</button>
+  <button class="add" id="open-add" aria-label="Ajouter une opération">
+    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button data-view="v-obj">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg>
+    Projets</button>
+  <button data-view="v-reg">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
+    Réglages</button>
+</nav>
+
+<!-- ======= FEUILLE DE SAISIE ======= -->
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Nouvelle opération">
+  <div class="sheet-h">
+    <button class="mini" id="s-close">Annuler</button>
+    <b id="s-title">Nouvelle opération</b>
+    <button class="mini" id="s-del" style="color:var(--bad)" hidden>Supprimer</button>
+    <span id="s-spacer" style="width:62px"></span>
+  </div>
+  <div class="sheet-b">
+    <div class="amount"><div class="num" id="s-amount">0,00</div><small>euros</small></div>
+    <div class="pills" id="s-types"></div>
+    <div class="field"><label>Catégorie</label><div class="chips" id="s-cats"></div></div>
+    <div class="field"><label>Compte</label><div class="chips" id="s-accs"></div></div>
+    <div class="field"><label for="s-date">Date</label><input type="date" id="s-date"></div>
+    <div class="field"><label for="s-note">Note</label><input type="text" id="s-note" placeholder="Facultatif"></div>
+    <label class="switch"><span>Charge qui revient chaque mois</span><input type="checkbox" id="s-rec"></label>
+    <div class="pad-keys" id="keys"></div>
+  </div>
+  <div class="sheet-f"><button class="btn" id="s-save">Enregistrer</button></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============ modèle ============ */
+var TYPES = [
+  {k:"rev", n:"Revenu",            c:"var(--rev)", w:"var(--rev-w)", sign:1},
+  {k:"fix", n:"Facture fixe",      c:"var(--fix)", w:"var(--fix-w)", sign:-1},
+  {k:"var", n:"Dépense variable",  c:"var(--var)", w:"var(--var-w)", sign:-1},
+  {k:"epa", n:"Épargne",           c:"var(--epa)", w:"var(--epa-w)", sign:-1},
+  {k:"cre", n:"Crédit / dette",    c:"var(--cre)", w:"var(--cre-w)", sign:-1}
+];
+var T = {}; TYPES.forEach(function(t){T[t.k]=t;});
+
+var DEFAULTS = {
+  prov: 25,
+  provCats: ["Deliveroo","Uber Eats","Autre plateforme","Pourboires"],
+  epaObj: 10,
+  theme: "auto",
+  accs: ["Carte perso","Carte pro","Espèces"],
+  cats: {
+    rev:["Deliveroo","Uber Eats","Autre plateforme","Pourboires","Aides / CAF","Remboursement","Autre revenu"],
+    fix:["Électricité","Gaz","Eau","Internet / Box","Téléphone mobile","Assurance habitation",
+         "Assurance véhicule","Assurance pro","Mutuelle","Taxe foncière","URSSAF","CFE",
+         "Frais bancaires","Abonnements"],
+    var:["Courses","Carburant","Entretien véhicule","Péage / Parking","Repas / Snacks",
+         "Matériel de travail","Travaux / Bricolage","Pharmacie","Vêtements","Enfants / École",
+         "Hygiène / Coiffeur","Loisirs","Cadeaux","Imprévus","Divers"],
+    epa:["Livret A","LDDS","Épargne de précaution","Provision URSSAF / Impôts",
+         "Projet travaux","Vacances","Achat véhicule"],
+    cre:["Crédit immobilier","Crédit auto","Paiement en 3x / 4x","Prêt famille","Découvert"]
+  },
+  bud: {},
+  obj: []
+};
+
+var cfg = clone(DEFAULTS);
+var months = {};            // "2026-09" -> [ops]
+var cur = ymKey(new Date());
+var db = null, downloads = null;
+var showAll = false, editing = null;
+
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function ymKey(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+
+/* ============ stockage ============ */
+function lsGet(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+var queue = Promise.resolve();
+function push(path, body){
+  if(!db) return;
+  queue = queue.then(function(){
+    return db.doc(path).set(body).catch(function(){});
+  });
+}
+function saveCfg(){ lsSet("bm.cfg", cfg); push("config/main", cfg); }
+function saveMonth(k){
+  var body = {items: months[k]||[]};
+  lsSet("bm.m."+k, body.items);
+  push("months/"+k, body);
+}
+
+function loadLocal(){
+  cfg = Object.assign(clone(DEFAULTS), lsGet("bm.cfg", {}));
+  cfg.cats = Object.assign(clone(DEFAULTS.cats), cfg.cats||{});
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var k = localStorage.key(i);
+      if(k && k.indexOf("bm.m.")===0) months[k.slice(5)] = lsGet(k, []);
+    }
+  }catch(e){}
+}
+
+function hydrate(){
+  if(!window.claude || !claude.use) return;
+  claude.use("db").then(function(d){
+    if(!d) return;
+    db = d;
+    document.getElementById("sync").textContent = "Sauvegardé";
+    return d.doc("config/main").get().then(function(s){
+      if(s.exists){
+        var v = s.data();
+        cfg = Object.assign(clone(DEFAULTS), v);
+        cfg.cats = Object.assign(clone(DEFAULTS.cats), v.cats||{});
+        lsSet("bm.cfg", cfg);
+      } else { push("config/main", cfg); }
+      var ks = monthKeys();
+      return Promise.all(ks.map(function(k){
+        return d.doc("months/"+k).get().then(function(ms){
+          if(ms.exists){
+            var it = ms.data().items;
+            if(Array.isArray(it)){ months[k]=it; lsSet("bm.m."+k, it); }
+          } else if((months[k]||[]).length){ push("months/"+k, {items:months[k]}); }
+        }).catch(function(){});
+      }));
+    }).then(function(){ applyTheme(); renderAll(); });
+  }).catch(function(){});
+
+  claude.use("downloads").then(function(d){ downloads = d; }).catch(function(){});
+}
+
+function monthKeys(){
+  var y = Number(cur.slice(0,4)), a=[];
+  for(var m=1;m<=12;m++) a.push(y+"-"+String(m).padStart(2,"0"));
+  return a;
+}
+function ops(k){ return months[k] || []; }
+
+/* ============ format ============ */
+var nf = new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",
+  minimumFractionDigits:2, maximumFractionDigits:2});
+var nf2 = new Intl.NumberFormat("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
+function r2(v){ return Math.round((v+Number.EPSILON)*100)/100; }
+function eur(v){ return nf.format(r2(v)); }
+function eur2(v){ return nf2.format(r2(v))+" €"; }
+var MN = ["janv.","févr.","mars","avril","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
+var MFULL = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+function dayLabel(iso){
+  var p = iso.split("-");
+  return Number(p[2]) + " " + MN[Number(p[1])-1];
+}
+
+/* ============ calculs ============ */
+function totals(list){
+  var t = {rev:0,fix:0,var:0,epa:0,cre:0};
+  list.forEach(function(o){ if(t[o.t]!==undefined) t[o.t]+=o.a; });
+  ["rev","fix","var","epa","cre"].forEach(function(k){ t[k]=r2(t[k]); });
+  t.dep = r2(t.fix+t.var+t.epa+t.cre);
+  t.solde = r2(t.rev - t.dep);
+  return t;
+}
+function byCat(list, types){
+  var m = {};
+  list.forEach(function(o){
+    if(types.indexOf(o.t)<0) return;
+    m[o.c] = (m[o.c]||0) + o.a;
+  });
+  return Object.keys(m).map(function(c){return {c:c,v:m[c]};})
+                .sort(function(a,b){return b.v-a.v;});
+}
+
+/* ============ rendu ============ */
+function renderMonths(){
+  var host = document.getElementById("months"), y = cur.slice(0,4);
+  host.innerHTML = "";
+  monthKeys().forEach(function(k,i){
+    var b = document.createElement("button");
+    b.className = "m-tab" + (ops(k).length ? " has-data" : "");
+    b.textContent = MN[i].replace(".","");
+    b.setAttribute("aria-current", k===cur ? "true":"false");
+    b.onclick = function(){ cur = k; showAll=false; renderAll();
+      b.scrollIntoView({block:"nearest",inline:"center",behavior:"smooth"}); };
+    host.appendChild(b);
+    if(k===cur) setTimeout(function(){b.scrollIntoView({block:"nearest",inline:"center"});},0);
+  });
+}
+
+function renderHero(){
+  var t = totals(ops(cur));
+  var el = document.getElementById("solde");
+  el.textContent = eur(t.solde);
+  el.className = "hero-val num " + (t.solde<0?"neg":(t.solde>0?"pos":""));
+  document.getElementById("tot-rev").textContent = eur(t.rev);
+  document.getElementById("tot-dep").textContent = eur(t.dep);
+
+  var base = Math.max(t.rev, t.dep, 1);
+  var sp = document.getElementById("split");
+  sp.innerHTML = "";
+  ["fix","var","epa","cre"].forEach(function(k){
+    if(!t[k]) return;
+    var i = document.createElement("i");
+    i.style.width = (t[k]/base*100)+"%";
+    i.style.background = T[k].c;
+    sp.appendChild(i);
+  });
+
+  var pc = cfg.provCats || [];
+  var pBase = ops(cur).filter(function(o){ return o.t==="rev" && pc.indexOf(o.c)>=0; })
+                      .reduce(function(a,b){ return a+b.a; }, 0);
+  var rate = Number(cfg.prov)||0;
+  var p = pBase * rate / 100;
+  var card = document.querySelector(".prov");
+  card.hidden = (rate<=0 || !pc.length);
+  document.getElementById("prov").textContent = eur(p);
+  document.getElementById("prov-rate").textContent =
+    rate.toString().replace(".",",") + " % de " + eur(pBase) + " encaissés sur " +
+    (pc.length>2 ? pc.length+" catégories" : pc.join(" et "));
+}
+
+function renderSave(){
+  var t = totals(ops(cur)), host = document.getElementById("save-card");
+  var pct = Number(cfg.epaObj)||0;
+  var cible = t.rev * pct / 100;
+  var fait = t.epa;
+  var dispo = t.solde;                    // revenus − toutes les sorties, épargne comprise
+  var prog = cible>0 ? Math.min(fait/cible*100, 100) : (fait>0?100:0);
+  var col = fait>=cible && cible>0 ? "var(--ok)" : (fait>0 ? "var(--warn)" : "var(--ink-3)");
+  var taux = t.rev>0 ? Math.round(fait/t.rev*100) : 0;
+
+  var msg;
+  if(dispo > 0) msg = "Tu as encore <b>"+eur(dispo)+"</b> non dépensés. Tu peux les mettre de côté.";
+  else if(dispo < 0) msg = "Tu as dépensé <b>"+eur(-dispo)+"</b> de plus que tes revenus ce mois-ci.";
+  else msg = "Tout ce que tu as encaissé est affecté.";
+
+  host.innerHTML =
+    '<div class="bud" style="padding:16px">'+
+      '<div class="bud-h"><span>Mis de côté</span><b style="color:var(--epa)">'+eur(fait)+
+        (cible>0 ? ' / '+eur(cible) : '')+'</b></div>'+
+      '<div class="track"><i style="width:'+prog+'%;background:var(--epa)"></i></div>'+
+      '<div class="pct" style="color:'+col+'">'+
+        (cible>0
+          ? (fait>=cible ? "Objectif du mois atteint" : "Encore "+eur(cible-fait)+" pour tenir ton objectif de "+pct+" %")
+          : "Aucun objectif fixé")+
+      '</div>'+
+    '</div>'+
+    '<div class="row" style="border-top:1px solid var(--line-2)">'+
+      '<span class="dot" style="background:var(--rev)"></span>'+
+      '<span class="row-n" style="font-size:14px;line-height:1.35">'+msg+'</span>'+
+    '</div>'+
+    '<div class="row">'+
+      '<span class="dot" style="background:var(--epa)"></span>'+
+      '<span class="row-n" style="font-size:14px">Taux d\'épargne du mois</span>'+
+      '<span class="row-v">'+taux+' %</span>'+
+    '</div>';
+}
+
+function renderTypeRows(){
+  var list = ops(cur), t = totals(list), host = document.getElementById("type-rows");
+  host.innerHTML = "";
+  TYPES.forEach(function(ty){
+    var n = list.filter(function(o){return o.t===ty.k;}).length;
+    var r = document.createElement("div"); r.className="row";
+    r.innerHTML = '<span class="dot" style="background:'+ty.c+'"></span>'+
+      '<span class="row-n">'+ty.n+'<span class="row-sub">'+(n?n+" opération"+(n>1?"s":""):"aucune opération")+'</span></span>'+
+      '<span class="row-v" style="color:'+(ty.k==="rev"?ty.c:"inherit")+'">'+
+      (ty.k==="rev"?"+":"−")+" "+eur(t[ty.k]).replace("€","€")+'</span>';
+    host.appendChild(r);
+  });
+}
+
+function renderDonut(){
+  var data = byCat(ops(cur), ["fix","var","cre"]).slice(0,6);
+  var host = document.getElementById("donut-card");
+  var sum = data.reduce(function(a,b){return a+b.v;},0);
+  if(!sum){ host.innerHTML = '<div class="empty">Saisis une dépense pour voir la répartition.</div>'; return; }
+  var pal = ["var(--fix)","var(--var)","var(--cre)","var(--epa)","var(--rev)","var(--ink-3)"];
+  var R=52, C=2*Math.PI*R, off=0, segs="";
+  data.forEach(function(d,i){
+    var len = d.v/sum*C;
+    segs += '<circle cx="61" cy="61" r="'+R+'" fill="none" stroke="'+pal[i%6]+'" stroke-width="17" '+
+            'stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" '+
+            'transform="rotate(-90 61 61)"/>';
+    off += len;
+  });
+  var leg = data.map(function(d,i){
+    return '<div><span class="dot" style="background:'+pal[i%6]+'"></span>'+
+           '<span>'+esc(d.c)+'</span><b>'+Math.round(d.v/sum*100)+' %</b></div>';
+  }).join("");
+  host.innerHTML = '<div class="donut-wrap"><svg viewBox="0 0 122 122" width="122" height="122">'+segs+
+    '<text x="61" y="58" text-anchor="middle" font-family="Barlow Semi Condensed" font-size="19" font-weight="700" fill="currentColor">'+
+    eur(sum)+'</text><text x="61" y="74" text-anchor="middle" font-size="10" fill="var(--ink-3)">de sorties</text>'+
+    '</svg><div class="dleg">'+leg+'</div></div>';
+}
+
+function renderBudgets(){
+  var host = document.getElementById("budgets"), list = ops(cur);
+  var keys = Object.keys(cfg.bud||{}).filter(function(c){return Number(cfg.bud[c])>0;});
+  if(!keys.length){
+    host.innerHTML = '<div class="empty">Aucun budget fixé. Tu peux en définir dans Réglages.</div>'; return;
+  }
+  host.innerHTML = "";
+  keys.forEach(function(c){
+    var lim = Number(cfg.bud[c]);
+    var spent = list.filter(function(o){return o.c===c;}).reduce(function(a,b){return a+b.a;},0);
+    var pct = Math.min(spent/lim*100, 100);
+    var col = spent>lim ? "var(--bad)" : (spent>lim*0.8 ? "var(--warn)" : "var(--ok)");
+    var d = document.createElement("div"); d.className="bud";
+    d.innerHTML = '<div class="bud-h"><span>'+esc(c)+'</span><b>'+eur(spent)+' / '+eur(lim)+'</b></div>'+
+      '<div class="track"><i style="width:'+pct+'%;background:'+col+'"></i></div>'+
+      '<div class="pct" style="color:'+col+'">'+
+      (spent>lim ? "Dépassé de "+eur(spent-lim) : "Il reste "+eur(lim-spent))+'</div>';
+    host.appendChild(d);
+  });
+}
+
+function renderTx(){
+  var host = document.getElementById("tx-list");
+  var q = (document.getElementById("q").value||"").toLowerCase().trim();
+  var list = ops(cur).slice().sort(function(a,b){
+    return a.d===b.d ? (b.id>a.id?1:-1) : (a.d<b.d?1:-1);
+  });
+  if(q) list = list.filter(function(o){
+    return (o.c+" "+(o.n||"")+" "+(o.ac||"")).toLowerCase().indexOf(q)>=0;
+  });
+  var more = document.getElementById("more");
+  var shown = showAll||q ? list : list.slice(0,8);
+  more.hidden = q || list.length<=8;
+  more.textContent = showAll ? "Réduire la liste" : "Tout afficher ("+list.length+")";
+
+  if(!shown.length){
+    host.innerHTML = '<div class="empty">'+(q?"Aucune opération ne correspond.":"Appuie sur + pour saisir ta première opération.")+'</div>';
+    return;
+  }
+  host.innerHTML = "";
+  shown.forEach(function(o){
+    var ty = T[o.t]||T["var"];
+    var b = document.createElement("button"); b.className="tx";
+    b.innerHTML = '<span class="tx-b" style="background:'+ty.c+'"></span>'+
+      '<span class="tx-m"><span class="tx-c">'+esc(o.c)+(o.r?' ↻':'')+'</span>'+
+      '<span class="tx-d">'+dayLabel(o.d)+(o.ac?" · "+esc(o.ac):"")+(o.n?" · "+esc(o.n):"")+'</span></span>'+
+      '<span class="tx-v" style="color:'+(o.t==="rev"?ty.c:"inherit")+'">'+
+      (o.t==="rev"?"+":"−")+" "+eur2(o.a)+'</span>';
+    b.onclick = function(){ openSheet(o); };
+    host.appendChild(b);
+  });
+}
+
+function renderYear(){
+  var ks = monthKeys(), all = [];
+  ks.forEach(function(k){ all = all.concat(ops(k)); });
+  var t = totals(all);
+  var el = document.getElementById("y-solde");
+  el.textContent = eur(t.solde);
+  el.className = "hero-val num " + (t.solde<0?"neg":(t.solde>0?"pos":""));
+  document.getElementById("y-rev").textContent = eur(t.rev);
+  document.getElementById("y-dep").textContent = eur(t.dep);
+  var ytaux = t.rev>0 ? Math.round(t.epa/t.rev*100) : 0;
+  document.getElementById("y-epa").innerHTML =
+    'Mis de côté sur l\'année <b style="color:var(--epa)">'+eur(t.epa)+'</b> · '+
+    'soit <b>'+ytaux+' %</b> de tes revenus';
+
+  var max = 1;
+  ks.forEach(function(k){ var m=totals(ops(k)); max=Math.max(max,m.rev,m.dep); });
+
+  var host = document.getElementById("y-rows"); host.innerHTML="";
+  ks.forEach(function(k,i){
+    var m = totals(ops(k));
+    var b = document.createElement("button"); b.className="y-row";
+    b.innerHTML = '<span class="y-m">'+MN[i].replace(".","")+'</span>'+
+      '<span class="y-bars"><i style="width:'+(m.rev/max*100)+'%;background:var(--rev)"></i>'+
+      '<i style="width:'+(m.dep/max*100)+'%;background:var(--var)"></i></span>'+
+      '<span class="y-v" style="color:'+(m.solde<0?"var(--bad)":(m.solde>0?"var(--rev)":"var(--ink-3)"))+'">'+
+      eur(m.solde)+'</span>';
+    b.onclick = function(){ cur=k; showAll=false; go("v-mois"); renderAll(); };
+    host.appendChild(b);
+  });
+
+  var yt = document.getElementById("y-types"); yt.innerHTML="";
+  TYPES.forEach(function(ty){
+    var r = document.createElement("div"); r.className="row";
+    r.innerHTML = '<span class="dot" style="background:'+ty.c+'"></span>'+
+      '<span class="row-n">'+ty.n+'</span><span class="row-v">'+eur(t[ty.k])+'</span>';
+    yt.appendChild(r);
+  });
+}
+
+function renderObj(){
+  var host = document.getElementById("obj-list");
+  var all = []; monthKeys().forEach(function(k){ all = all.concat(ops(k)); });
+  var sel = document.getElementById("o-k");
+  sel.innerHTML = cfg.cats.epa.map(function(c){return '<option>'+esc(c)+'</option>';}).join("");
+
+  if(!(cfg.obj||[]).length){
+    host.innerHTML = '<div class="empty">Aucun projet pour l\'instant.</div>'; return;
+  }
+  host.innerHTML = "";
+  cfg.obj.forEach(function(o,i){
+    var got = all.filter(function(x){return x.t==="epa" && x.c===o.k;})
+                 .reduce(function(a,b){return a+b.a;},0);
+    var pct = o.cible>0 ? Math.min(got/o.cible*100,100) : 0;
+    var d = document.createElement("div"); d.className="bud";
+    d.innerHTML = '<div class="bud-h"><span>'+esc(o.nom)+'</span><b>'+eur(got)+' / '+eur(o.cible)+'</b></div>'+
+      '<div class="track"><i style="width:'+pct+'%;background:var(--epa)"></i></div>'+
+      '<div class="pct">'+(got>=o.cible ? "Objectif atteint" : "Encore "+eur(o.cible-got)+" · via « "+esc(o.k)+" »")+
+      ' <button class="x" data-i="'+i+'" style="float:right;margin-top:-6px">✕</button></div>';
+    host.appendChild(d);
+  });
+  host.querySelectorAll(".x").forEach(function(b){
+    b.onclick = function(){ cfg.obj.splice(Number(b.dataset.i),1); saveCfg(); renderObj(); };
+  });
+}
+
+function renderSettings(){
+  document.getElementById("r-prov").value = cfg.prov;
+  document.getElementById("r-epa").value = cfg.epaObj;
+  document.getElementById("r-theme").value = cfg.theme||"auto";
+
+  var pcHost = document.getElementById("provcats"); pcHost.innerHTML="";
+  cfg.provCats = cfg.provCats || [];
+  cfg.cats.rev.forEach(function(c){
+    var l = document.createElement("label"); l.className="list-line";
+    var on = cfg.provCats.indexOf(c)>=0;
+    l.innerHTML = '<input type="checkbox" style="width:20px;height:20px;accent-color:var(--epa);flex:0 0 auto"'+
+      (on?" checked":"")+'><span style="flex:1">'+esc(c)+'</span>';
+    l.querySelector("input").onchange = function(e){
+      var i = cfg.provCats.indexOf(c);
+      if(e.target.checked){ if(i<0) cfg.provCats.push(c); }
+      else if(i>=0) cfg.provCats.splice(i,1);
+      saveCfg(); renderHero();
+    };
+    pcHost.appendChild(l);
+  });
+
+  var accs = document.getElementById("accs"); accs.innerHTML="";
+  cfg.accs.forEach(function(a,i){
+    var l = document.createElement("div"); l.className="list-line";
+    l.innerHTML = '<input type="text" value="'+esc(a)+'"><button class="x">✕</button>';
+    l.querySelector("input").onchange = function(e){ cfg.accs[i]=e.target.value.trim()||a; saveCfg(); };
+    l.querySelector(".x").onclick = function(){ cfg.accs.splice(i,1); saveCfg(); renderSettings(); };
+    accs.appendChild(l);
+  });
+  accs.appendChild(adder("Nouveau compte", function(v){ cfg.accs.push(v); saveCfg(); renderSettings(); }));
+
+  var cats = document.getElementById("cats"); cats.innerHTML="";
+  TYPES.forEach(function(ty){
+    var h = document.createElement("h3");
+    h.innerHTML = '<span class="dot" style="background:'+ty.c+';display:inline-block;margin-right:7px"></span>'+ty.n;
+    h.style.margin = "16px 0 8px";
+    cats.appendChild(h);
+    var c = document.createElement("div"); c.className="card";
+    cfg.cats[ty.k].forEach(function(name,i){
+      var l = document.createElement("div"); l.className="list-line";
+      l.innerHTML = '<input type="text" value="'+esc(name)+'"><button class="x">✕</button>';
+      l.querySelector("input").onchange = function(e){
+        var nv = e.target.value.trim(); if(!nv) return;
+        renameCat(name, nv); cfg.cats[ty.k][i]=nv; saveCfg(); renderAll();
+      };
+      l.querySelector(".x").onclick = function(){
+        cfg.cats[ty.k].splice(i,1); saveCfg(); renderSettings();
+      };
+      c.appendChild(l);
+    });
+    c.appendChild(adder("Nouvelle catégorie", function(v){
+      cfg.cats[ty.k].push(v); saveCfg(); renderSettings();
+    }));
+    cats.appendChild(c);
+  });
+
+  var bs = document.getElementById("budset"); bs.innerHTML="";
+  cfg.cats.fix.concat(cfg.cats["var"]).forEach(function(c){
+    var l = document.createElement("div"); l.className="list-line";
+    l.innerHTML = '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c)+'</span>'+
+      '<input type="number" inputmode="decimal" min="0" value="'+(cfg.bud[c]||"")+'" placeholder="0">'+
+      '<span style="color:var(--ink-3)">€</span>';
+    l.querySelector("input").onchange = function(e){
+      var v = Number(e.target.value)||0;
+      if(v>0) cfg.bud[c]=v; else delete cfg.bud[c];
+      saveCfg(); renderBudgets();
+    };
+    bs.appendChild(l);
+  });
+}
+
+function adder(ph, fn){
+  var d = document.createElement("div"); d.className="add-line";
+  d.innerHTML = '<input type="text" placeholder="'+ph+'"><button class="mini">Ajouter</button>';
+  var inp = d.querySelector("input");
+  d.querySelector("button").onclick = function(){
+    var v = inp.value.trim(); if(!v) return; inp.value=""; fn(v);
+  };
+  inp.onkeydown = function(e){ if(e.key==="Enter") d.querySelector("button").click(); };
+  return d;
+}
+function renameCat(oldN, newN){
+  Object.keys(months).forEach(function(k){
+    var ch=false;
+    months[k].forEach(function(o){ if(o.c===oldN){ o.c=newN; ch=true; } });
+    if(ch) saveMonth(k);
+  });
+  if(cfg.bud[oldN]!==undefined){ cfg.bud[newN]=cfg.bud[oldN]; delete cfg.bud[oldN]; }
+  (cfg.obj||[]).forEach(function(o){ if(o.k===oldN) o.k=newN; });
+}
+
+function renderAll(){
+  renderMonths(); renderHero(); renderSave(); renderTypeRows(); renderDonut();
+  renderBudgets(); renderTx(); renderYear(); renderObj(); renderSettings();
+}
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g, function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+
+/* ============ navigation ============ */
+function go(id){
+  ["v-mois","v-annee","v-obj","v-reg"].forEach(function(v){
+    document.getElementById(v).hidden = (v!==id);
+  });
+  document.querySelectorAll("nav button[data-view]").forEach(function(b){
+    b.setAttribute("aria-current", b.dataset.view===id ? "true":"false");
+  });
+  window.scrollTo(0,0);
+}
+document.querySelectorAll("nav button[data-view]").forEach(function(b){
+  b.onclick = function(){ go(b.dataset.view); };
+});
+
+/* ============ feuille de saisie ============ */
+var draft = null;
+
+function openSheet(op){
+  editing = op || null;
+  var d = new Date();
+  var iso = op ? op.d : (cur === ymKey(d) ? isoOf(d) : cur+"-01");
+  draft = op ? {t:op.t, c:op.c, ac:op.ac, d:op.d, n:op.n||"", r:!!op.r, s:String(Math.round(op.a*100))}
+             : {t:"var", c:cfg.cats["var"][0]||"", ac:cfg.accs[0]||"", d:iso, n:"", r:false, s:""};
+  document.getElementById("s-title").textContent = op ? "Modifier" : "Nouvelle opération";
+  document.getElementById("s-del").hidden = !op;
+  document.getElementById("s-date").value = draft.d;
+  document.getElementById("s-note").value = draft.n;
+  document.getElementById("s-rec").checked = draft.r;
+  paintSheet();
+  document.getElementById("sheet").classList.add("open");
+}
+function isoOf(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function closeSheet(){ document.getElementById("sheet").classList.remove("open"); editing=null; }
+
+function amountVal(){ return (Number(draft.s)||0)/100; }
+
+function paintSheet(){
+  document.getElementById("s-amount").textContent = nf2.format(amountVal());
+
+  var tp = document.getElementById("s-types"); tp.innerHTML="";
+  TYPES.forEach(function(ty){
+    var b = document.createElement("button"); b.className="pill"; b.textContent=ty.n;
+    var on = draft.t===ty.k;
+    b.setAttribute("aria-pressed", on?"true":"false");
+    if(on) b.style.background = ty.c;
+    b.onclick = function(){
+      draft.t = ty.k;
+      if(cfg.cats[ty.k].indexOf(draft.c)<0) draft.c = cfg.cats[ty.k][0]||"";
+      paintSheet();
+    };
+    tp.appendChild(b);
+  });
+
+  var cs = document.getElementById("s-cats"); cs.innerHTML="";
+  cfg.cats[draft.t].forEach(function(c){
+    var b = document.createElement("button"); b.className="chip"; b.textContent=c;
+    b.setAttribute("aria-pressed", draft.c===c?"true":"false");
+    b.onclick = function(){ draft.c=c; paintSheet(); };
+    cs.appendChild(b);
+  });
+
+  var as = document.getElementById("s-accs"); as.innerHTML="";
+  cfg.accs.forEach(function(a){
+    var b = document.createElement("button"); b.className="chip"; b.textContent=a;
+    b.setAttribute("aria-pressed", draft.ac===a?"true":"false");
+    b.onclick = function(){ draft.ac=a; paintSheet(); };
+    as.appendChild(b);
+  });
+  document.getElementById("s-save").disabled = !(amountVal()>0 && draft.c);
+}
+
+(function buildKeys(){
+  var host = document.getElementById("keys");
+  ["1","2","3","4","5","6","7","8","9","C","0","⌫"].forEach(function(k){
+    var b = document.createElement("button"); b.className="key"; b.textContent=k;
+    b.onclick = function(){
+      if(k==="C") draft.s="";
+      else if(k==="⌫") draft.s = draft.s.slice(0,-1);
+      else if(draft.s.length<8) draft.s = (draft.s + k).replace(/^0+/,"");
+      paintSheet();
+    };
+    host.appendChild(b);
+  });
+})();
+
+document.getElementById("s-close").onclick = closeSheet;
+document.getElementById("s-date").onchange = function(e){ draft.d = e.target.value; };
+document.getElementById("s-note").oninput  = function(e){ draft.n = e.target.value; };
+document.getElementById("s-rec").onchange  = function(e){ draft.r = e.target.checked; };
+document.getElementById("open-add").onclick = function(){ openSheet(null); };
+
+document.getElementById("s-save").onclick = function(){
+  var a = amountVal(); if(!(a>0) || !draft.c) return;
+  var key = draft.d.slice(0,7);
+  if(editing){
+    var old = editing.d.slice(0,7);
+    months[old] = ops(old).filter(function(o){return o.id!==editing.id;});
+    saveMonth(old);
+  }
+  if(!months[key]) months[key]=[];
+  months[key].push({id: editing? editing.id : uid(), d:draft.d, t:draft.t, c:draft.c,
+                    a:a, ac:draft.ac, n:draft.n, r:draft.r});
+  saveMonth(key);
+  if(key!==cur && key.slice(0,4)===cur.slice(0,4)) cur = key;
+  closeSheet(); renderAll();
+  toast(editing ? "Opération modifiée" : "Opération enregistrée");
+};
+
+document.getElementById("s-del").onclick = function(){
+  if(!editing) return;
+  var k = editing.d.slice(0,7);
+  months[k] = ops(k).filter(function(o){return o.id!==editing.id;});
+  saveMonth(k); closeSheet(); renderAll(); toast("Opération supprimée");
+};
+
+/* ============ actions ============ */
+document.getElementById("q").oninput = renderTx;
+document.getElementById("more").onclick = function(){ showAll=!showAll; renderTx(); };
+
+document.getElementById("repeat").onclick = function(){
+  var ks = monthKeys(), i = ks.indexOf(cur);
+  if(i<=0){ toast("Aucun mois précédent dans l'année"); return; }
+  var prev = ops(ks[i-1]).filter(function(o){return o.r;});
+  if(!prev.length){ toast("Aucune charge marquée « chaque mois »"); return; }
+  if(!months[cur]) months[cur]=[];
+  var added = 0;
+  prev.forEach(function(o){
+    var exists = months[cur].some(function(x){return x.c===o.c && x.r && Math.abs(x.a-o.a)<0.01;});
+    if(exists) return;
+    var day = Math.min(Number(o.d.slice(8,10)), 28);
+    months[cur].push({id:uid(), d:cur+"-"+String(day).padStart(2,"0"), t:o.t, c:o.c,
+                      a:o.a, ac:o.ac, n:o.n, r:true});
+    added++;
+  });
+  saveMonth(cur); renderAll();
+  toast(added ? added+" charge"+(added>1?"s":"")+" reportée"+(added>1?"s":"") : "Elles sont déjà là");
+};
+
+document.getElementById("r-prov").onchange = function(e){
+  cfg.prov = Math.max(0, Math.min(60, Number(e.target.value)||0));
+  e.target.value = cfg.prov; saveCfg(); renderHero();
+};
+document.getElementById("r-epa").onchange = function(e){
+  cfg.epaObj = Math.max(0, Math.min(80, Number(e.target.value)||0));
+  e.target.value = cfg.epaObj; saveCfg(); renderSave(); renderYear();
+};
+document.getElementById("r-theme").onchange = function(e){
+  cfg.theme = e.target.value; saveCfg(); applyTheme();
+};
+function applyTheme(){
+  var t = cfg.theme||"auto";
+  if(t==="auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", t);
+}
+
+document.getElementById("o-add").onclick = function(){
+  var n = document.getElementById("o-n").value.trim();
+  var c = Number(document.getElementById("o-c").value)||0;
+  var k = document.getElementById("o-k").value;
+  if(!n || !(c>0)){ toast("Donne un nom et un montant"); return; }
+  cfg.obj = cfg.obj||[]; cfg.obj.push({nom:n, cible:c, k:k});
+  document.getElementById("o-n").value=""; document.getElementById("o-c").value="";
+  saveCfg(); renderObj(); toast("Projet créé");
+};
+
+function csv(){
+  var rows = [["Date","Type","Catégorie","Montant","Compte","Note","Récurrent"]];
+  monthKeys().forEach(function(k){
+    ops(k).slice().sort(function(a,b){return a.d<b.d?-1:1;}).forEach(function(o){
+      rows.push([o.d, T[o.t].n, o.c, String(o.a).replace(".",","), o.ac||"", o.n||"", o.r?"oui":"non"]);
+    });
+  });
+  return "\uFEFF" + rows.map(function(r){
+    return r.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(";");
+  }).join("\r\n");
+}
+function doExport(){
+  var name = "budget-"+cur.slice(0,4)+".csv";
+  var data = csv();
+  if(downloads){
+    downloads.save({filename:name, data:data}).then(function(){ toast("Fichier enregistré"); })
+      .catch(function(){ toast("Enregistrement refusé"); });
+  } else {
+    var a = document.createElement("a");
+    a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(data);
+    a.download = name; a.click();
+    toast("Export lancé");
+  }
+}
+document.getElementById("export").onclick = doExport;
+document.getElementById("export2").onclick = doExport;
+
+document.getElementById("wipe").onclick = function(){
+  if(!confirm("Effacer toutes les opérations de "+MFULL[Number(cur.slice(5))-1]+" ?")) return;
+  months[cur]=[]; saveMonth(cur); renderAll(); toast("Mois effacé");
+};
+
+var tt;
+function toast(m){
+  var el = document.getElementById("toast");
+  el.textContent = m; el.classList.add("on");
+  clearTimeout(tt); tt = setTimeout(function(){ el.classList.remove("on"); }, 1900);
+}
+
+/* ============ démarrage ============ */
+loadLocal();
+applyTheme();
+renderAll();
+hydrate();
+})();
+</script>
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("./sw.js").catch(function(){});
+  });
+}
+</script>
+</body>
+</html>
