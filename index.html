@@ -124,9 +124,17 @@ h3{font-family:'Barlow Semi Condensed';font-size:14px;font-weight:600;margin:0 0
 .tx-n{font-family:'Barlow Semi Condensed';font-weight:600;font-size:11px;padding:1px 6px;border-radius:999px;
   background:var(--line-2);color:var(--ink-2);margin-left:6px;vertical-align:1px;white-space:nowrap}
 .tx-n.last{background:var(--cre-w);color:var(--cre)}
+.tx-n.soon{background:var(--var-w);color:var(--var)}
+.tx-n.auto{background:var(--fix-w);color:var(--fix)}
 .empty{padding:26px 16px;text-align:center;color:var(--ink-3);font-size:14px}
 .search{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:var(--r-s);
   background:var(--card);margin-bottom:10px}
+
+/* ---------- séries récurrentes ---------- */
+.rec-item{border-top:1px solid var(--line-2)}
+.rec-item:first-child{border-top:0}
+.rec-acts{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 13px}
+.rec-item .tx{border-top:0;padding-bottom:8px}
 
 /* ---------- boutons ---------- */
 .btn{display:block;width:100%;padding:13px;border-radius:var(--r-s);background:var(--ink);
@@ -182,9 +190,11 @@ nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
 .rec-box{margin-top:8px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-s);
   background:var(--card)}
 .rec-box label{display:block;font-size:13px;color:var(--ink-2);margin-bottom:6px}
-.rec-box select{width:100%;padding:12px 14px;border:1px solid var(--line);
+.rec-box label.sp{margin-top:12px}
+.rec-box select,.rec-box input[type=number],.rec-box input[type=month]{
+  width:100%;padding:12px 14px;border:1px solid var(--line);
   border-radius:var(--r-s);background:var(--paper)}
-.rec-info{font-size:13px;color:var(--ink-2);margin:8px 0 0;line-height:1.35}
+.rec-info{font-size:13px;color:var(--ink-2);margin:10px 0 0;line-height:1.35}
 .pad-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
 .key{padding:16px 0;border-radius:var(--r-s);background:var(--card);border:1px solid var(--line);
   font-family:'Barlow Semi Condensed';font-size:24px;font-weight:600;text-align:center}
@@ -217,7 +227,8 @@ nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
 /* ---------- toast ---------- */
 #toast{position:fixed;left:50%;bottom:calc(var(--nav) + 18px + env(safe-area-inset-bottom));
   transform:translate(-50%,14px);background:var(--ink);color:var(--paper);padding:10px 18px;
-  border-radius:999px;font-size:14px;z-index:80;opacity:0;pointer-events:none;transition:.2s}
+  border-radius:999px;font-size:14px;z-index:80;opacity:0;pointer-events:none;transition:.2s;
+  max-width:88vw;text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 </style>
 </head>
@@ -239,8 +250,8 @@ nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
       <div class="hero-val num" id="solde">0 €</div>
       <div class="split" id="split"></div>
       <div class="hero-legend">
-        <div>Encaissé <b id="tot-rev">0 €</b></div>
-        <div>Sorti <b id="tot-dep">0 €</b></div>
+        <div>Entrées <b id="tot-rev">0 €</b></div>
+        <div>Sorties <b id="tot-dep">0 €</b></div>
       </div>
     </div>
 
@@ -266,7 +277,7 @@ nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
     <input class="search" id="q" type="search" placeholder="Rechercher une opération">
     <div class="card" id="tx-list"></div>
     <button class="btn ghost" id="more" style="margin-top:8px" hidden>Tout afficher</button>
-    <button class="btn ghost" id="repeat" style="margin-top:8px">Reporter les charges fixes du mois précédent</button>
+    <button class="btn ghost" id="gorec" style="margin-top:8px">Gérer les opérations récurrentes</button>
   </section>
 
   <!-- ======= ANNÉE ======= -->
@@ -275,8 +286,8 @@ nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
       <div class="hero-lab">Solde cumulé sur l'année</div>
       <div class="hero-val num" id="y-solde">0 €</div>
       <div class="hero-legend">
-        <div>Encaissé <b id="y-rev">0 €</b></div>
-        <div>Sorti <b id="y-dep">0 €</b></div>
+        <div>Entrées <b id="y-rev">0 €</b></div>
+        <div>Sorties <b id="y-dep">0 €</b></div>
       </div>
     </div>
     <div class="card pad" id="y-epa" style="font-size:14px;color:var(--ink-2);line-height:1.4"></div>
@@ -309,7 +320,12 @@ nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
 
   <!-- ======= RÉGLAGES ======= -->
   <section id="v-reg" hidden>
-    <h2 style="margin-top:8px">Nom de l'application</h2>
+    <h2 style="margin-top:8px" id="recs-title">Opérations récurrentes</h2>
+    <div class="card" id="recs"></div>
+    <p class="help">Chaque série se remplit toute seule sur tous les mois concernés, passés comme à venir.
+      Pour changer une seule échéance, ouvre-la depuis la liste des opérations du mois.</p>
+
+    <h2>Nom de l'application</h2>
     <div class="card pad">
       <div class="field"><label for="r-app">Titre affiché en haut de l'écran</label>
         <input type="text" id="r-app" placeholder="Mon budget"></div>
@@ -357,7 +373,7 @@ nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
     <h2>Données</h2>
     <button class="btn ghost" id="export2">Exporter l'année en CSV</button>
     <button class="btn ghost" id="reset-lists" style="margin-top:8px">Rétablir les catégories et types d'origine</button>
-    <button class="btn danger" id="wipe" style="margin-top:8px">Effacer le mois affiché</button>
+    <button class="btn danger" id="wipe" style="margin-top:8px">Effacer les saisies du mois affiché</button>
   </section>
 </main>
 
@@ -388,17 +404,42 @@ nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
   </div>
   <div class="sheet-b">
     <div class="amount"><div class="num" id="s-amount">0,00</div><small>euros</small></div>
+
+    <div class="rec-box" id="s-scope-box" hidden>
+      <label>Ce que tu modifies</label>
+      <div class="chips" id="s-scope"></div>
+      <p class="rec-info" id="s-scope-info"></p>
+    </div>
+
     <div class="pills" id="s-types"></div>
     <div class="field"><label>Catégorie</label><div class="chips" id="s-cats"></div></div>
     <div class="field"><label>Compte</label><div class="chips" id="s-accs"></div></div>
-    <div class="field"><label for="s-date">Date</label><input type="date" id="s-date"></div>
+    <div class="field"><label for="s-date" id="s-date-lab">Date</label><input type="date" id="s-date"></div>
     <div class="field"><label for="s-note">Note</label><input type="text" id="s-note" placeholder="Facultatif"></div>
-    <label class="switch"><span>Charge qui revient chaque mois</span><input type="checkbox" id="s-rec"></label>
+
+    <label class="switch" id="s-rec-sw"><span>Revient automatiquement chaque mois</span><input type="checkbox" id="s-rec"></label>
     <div class="rec-box" id="s-rec-box" hidden>
-      <label for="s-rec-n">Pendant combien de mois ?</label>
-      <select id="s-rec-n"></select>
+      <label for="s-freq">Ça revient</label>
+      <select id="s-freq">
+        <option value="1">tous les mois</option>
+        <option value="2">tous les 2 mois</option>
+        <option value="3">tous les 3 mois (trimestre)</option>
+        <option value="6">tous les 6 mois (semestre)</option>
+        <option value="12">une fois par an</option>
+      </select>
+      <label for="s-end" class="sp">Fin</label>
+      <select id="s-end">
+        <option value="none">Sans fin</option>
+        <option value="count">Après un nombre d'échéances</option>
+        <option value="until">Jusqu'à un mois précis</option>
+      </select>
+      <div id="s-end-count" hidden><label for="s-count" class="sp">Nombre total d'échéances</label>
+        <input type="number" id="s-count" inputmode="numeric" min="1" max="600" placeholder="4"></div>
+      <div id="s-end-until" hidden><label for="s-until" class="sp">Dernier mois</label>
+        <input type="month" id="s-until"></div>
       <p class="rec-info" id="s-rec-info"></p>
     </div>
+
     <div class="pad-keys" id="keys"></div>
   </div>
   <div class="sheet-f"><button class="btn" id="s-save">Enregistrer</button></div>
@@ -453,25 +494,166 @@ var DEFAULTS = {
   bud: {},
   typeNames: {},
   userTypes: [],
+  recs: [],
   appName: "Mon budget",
   obj: []
 };
 
 var cfg = clone(DEFAULTS);
-var months = {};            // "2026-09" -> [ops]
+var months = {};            // "2026-09" -> [ops saisies, surcharges, suppressions]
 var cur = ymKey(new Date());
 var db = null, downloads = null;
-var showAll = false, editing = null;
+var showAll = false, editing = null, editingRec = null;
 
 function clone(o){return JSON.parse(JSON.stringify(o));}
 function tn(k){ return (cfg.typeNames && cfg.typeNames[k]) || (T[k]?T[k].n:k); }
 function ymKey(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 
-/* --- échéances : rn = nombre total de prélèvements (0 = sans fin), ri = numéro en cours --- */
+/* --- échéances : rn = nombre total (0 = sans fin), ri = numéro en cours --- */
 function recTotal(o){ return Math.max(0, Number(o && o.rn) || 0); }
 function recIdx(o){ return Math.max(1, Number(o && o.ri) || 1); }
 function recDone(o){ var n = recTotal(o); return n > 0 && recIdx(o) >= n; }
+
+/* ============ outils de dates ============ */
+function ymAdd(ym, n){
+  var y = Number(ym.slice(0,4)), m = Number(ym.slice(5,7)) - 1 + n;
+  y += Math.floor(m/12); m = ((m%12)+12)%12;
+  return y+"-"+String(m+1).padStart(2,"0");
+}
+function ymDiff(a, b){
+  return (Number(b.slice(0,4))-Number(a.slice(0,4)))*12 +
+         (Number(b.slice(5,7))-Number(a.slice(5,7)));
+}
+function daysIn(ym){ return new Date(Number(ym.slice(0,4)), Number(ym.slice(5,7)), 0).getDate(); }
+function isoOf(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+
+/* ============ récurrences ============ */
+function getRec(id){
+  var f = (cfg.recs||[]).filter(function(r){return r.id===id;});
+  return f.length ? f[0] : null;
+}
+function recFreq(r){ return Math.max(1, Number(r.freq)||1); }
+function occIndex(r, ym){ return (Number(r.i0)||1) + ymDiff(r.start, ym)/recFreq(r); }
+
+/* renvoie l'échéance générée pour ce mois, ou null */
+function recOcc(r, ym){
+  if(!r || !r.start) return null;
+  var n = ymDiff(r.start, ym);
+  if(n < 0) return null;
+  var f = recFreq(r);
+  if(n % f !== 0) return null;
+  if(r.until && ym > r.until) return null;
+  if(r.pausedFrom && ym >= r.pausedFrom) return null;
+  var idx = (Number(r.i0)||1) + n/f;
+  var tot = Math.max(0, Number(r.count)||0);
+  if(tot > 0 && idx > tot) return null;
+  var day = Math.min(Math.max(1, Number(r.day)||1), daysIn(ym));
+  return {id:"g_"+r.id+"_"+ym, rid:r.id, gen:true,
+          d: ym+"-"+String(day).padStart(2,"0"),
+          t:r.t, c:r.c, a:r.a, ac:r.ac, n:r.n||"",
+          r:true, rn:tot, ri:idx};
+}
+function genMonth(ym){
+  var out = [];
+  (cfg.recs||[]).forEach(function(r){ var o = recOcc(r, ym); if(o) out.push(o); });
+  return out;
+}
+
+/* liste réelle d'un mois : saisies + générées, surcharges et suppressions appliquées */
+function ops(ym){
+  var raw = months[ym] || [];
+  var over = {};
+  raw.forEach(function(o){ if(o.rid) over[o.rid] = true; });
+  var list = raw.filter(function(o){ return !o.del; });
+  genMonth(ym).forEach(function(o){ if(!over[o.rid]) list.push(o); });
+  return list;
+}
+
+function putOverride(ym, rid, d){
+  if(!months[ym]) months[ym] = [];
+  months[ym] = months[ym].filter(function(o){ return o.rid !== rid; });
+  months[ym].push({id:"o_"+rid+"_"+ym, rid:rid, d:d.d, t:d.t, c:d.c, a:d.a,
+                   ac:d.ac, n:d.n||"", r:true, rn:d.rn||0, ri:d.ri||1});
+  saveMonth(ym);
+}
+function putTomb(ym, rid){
+  if(!months[ym]) months[ym] = [];
+  months[ym] = months[ym].filter(function(o){ return o.rid !== rid; });
+  months[ym].push({id:"x_"+rid+"_"+ym, rid:rid, del:true});
+  saveMonth(ym);
+}
+function deleteRec(id){
+  cfg.recs = (cfg.recs||[]).filter(function(r){ return r.id !== id; });
+  Object.keys(months).forEach(function(k){
+    var b = months[k].length;
+    months[k] = months[k].filter(function(o){ return o.rid !== id; });
+    if(months[k].length !== b) saveMonth(k);
+  });
+  saveCfg();
+}
+function removeOp(op){
+  var k = op.d.slice(0,7);
+  months[k] = (months[k]||[]).filter(function(o){ return o.id !== op.id; });
+  saveMonth(k);
+}
+
+/* absorbe les saisies manuelles identiques déjà présentes (anti-doublon) */
+function absorb(r){
+  var n = 0;
+  Object.keys(months).forEach(function(k){
+    var occ = recOcc(r, k); if(!occ) return;
+    var before = months[k].length;
+    months[k] = months[k].filter(function(o){
+      if(o.rid || o.del) return true;
+      return !(o.t===r.t && o.c===r.c && Math.abs(o.a-occ.a) < 0.01);
+    });
+    if(months[k].length !== before){ n += before - months[k].length; saveMonth(k); }
+  });
+  return n;
+}
+
+/* reprend les anciennes charges « chaque mois » et les transforme en séries */
+function migrateRecs(){
+  cfg.recs = cfg.recs || [];
+  var groups = {}, keys = Object.keys(months).sort();
+  keys.forEach(function(k){
+    (months[k]||[]).forEach(function(o){
+      if(!o.r || o.rid || o.del) return;
+      var key = o.t+"|"+o.c+"|"+(o.ac||"");
+      (groups[key] = groups[key] || []).push({k:k, o:o});
+    });
+  });
+  var made = 0;
+  Object.keys(groups).forEach(function(key){
+    var g = groups[key];
+    var first = g[0], last = g[g.length-1];
+    var r = null;
+    (cfg.recs||[]).forEach(function(x){
+      if(x.t===first.o.t && x.c===first.o.c && (x.ac||"")===(first.o.ac||"")) r = x;
+    });
+    if(!r){
+      r = {id:uid(), t:last.o.t, c:last.o.c, ac:last.o.ac, n:last.o.n||"", a:last.o.a,
+           day:Number(last.o.d.slice(8,10)), freq:1, start:first.k, until:"",
+           count:recTotal(last.o), i0:recIdx(first.o), pausedFrom:""};
+      cfg.recs.push(r); made++;
+    }
+    g.forEach(function(x){
+      months[x.k] = months[x.k].filter(function(o){ return o !== x.o; });
+      var occ = recOcc(r, x.k);
+      if(!occ){
+        months[x.k].push({id:x.o.id, d:x.o.d, t:x.o.t, c:x.o.c, a:x.o.a,
+                          ac:x.o.ac, n:x.o.n||"", r:false, rn:0, ri:1});
+      } else if(Math.abs(occ.a - x.o.a) > 0.005 || occ.d !== x.o.d || (occ.n||"") !== (x.o.n||"")){
+        months[x.k].push({id:"o_"+r.id+"_"+x.k, rid:r.id, d:x.o.d, t:x.o.t, c:x.o.c,
+                          a:x.o.a, ac:x.o.ac, n:x.o.n||"", r:true, rn:occ.rn, ri:occ.ri});
+      }
+      saveMonth(x.k);
+    });
+  });
+  if(made) saveCfg();
+  return made;
+}
 
 /* ============ stockage ============ */
 function lsGet(k,f){try{var v=localStorage.getItem(k);return v?JSON.parse(v):f;}catch(e){return f;}}
@@ -494,6 +676,7 @@ function saveMonth(k){
 function loadLocal(){
   cfg = Object.assign(clone(DEFAULTS), lsGet("bm.cfg", {}));
   cfg.cats = Object.assign(clone(DEFAULTS.cats), cfg.cats||{});
+  cfg.recs = cfg.recs || [];
   try{
     for(var i=0;i<localStorage.length;i++){
       var k = localStorage.key(i);
@@ -514,6 +697,7 @@ function hydrate(){
         var v = s.data();
         cfg = Object.assign(clone(DEFAULTS), v);
         cfg.cats = Object.assign(clone(DEFAULTS.cats), v.cats||{});
+        cfg.recs = cfg.recs || [];
         buildTypes();
         lsSet("bm.cfg", cfg);
       } else { push("config/main", cfg); }
@@ -526,7 +710,7 @@ function hydrate(){
           } else if((months[k]||[]).length){ push("months/"+k, {items:months[k]}); }
         }).catch(function(){});
       }));
-    }).then(function(){ applyTheme(); renderAll(); });
+    }).then(function(){ migrateRecs(); applyTheme(); renderAll(); });
   }).catch(function(){});
 
   claude.use("downloads").then(function(d){ downloads = d; }).catch(function(){});
@@ -537,7 +721,6 @@ function monthKeys(){
   for(var m=1;m<=12;m++) a.push(y+"-"+String(m).padStart(2,"0"));
   return a;
 }
-function ops(k){ return months[k] || []; }
 
 /* ============ format ============ */
 var nf = new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0});
@@ -549,6 +732,10 @@ var MFULL = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août",
 function dayLabel(iso){
   var p = iso.split("-");
   return Number(p[2]) + " " + MN[Number(p[1])-1];
+}
+function monthLabel(ym){
+  if(!ym) return "";
+  return MFULL[Number(ym.slice(5,7))-1] + " " + ym.slice(0,4);
 }
 
 /* ============ calculs ============ */
@@ -575,7 +762,7 @@ function byCat(list, types){
 
 /* ============ rendu ============ */
 function renderMonths(){
-  var host = document.getElementById("months"), y = cur.slice(0,4);
+  var host = document.getElementById("months");
   host.innerHTML = "";
   monthKeys().forEach(function(k,i){
     var b = document.createElement("button");
@@ -617,7 +804,7 @@ function renderHero(){
   card.hidden = (rate<=0 || !pc.length);
   document.getElementById("prov").textContent = eur(p);
   document.getElementById("prov-rate").textContent =
-    rate.toString().replace(".",",") + " % de " + eur(pBase) + " encaissés sur " +
+    rate.toString().replace(".",",") + " % de " + eur(pBase) + " de revenus sur " +
     (pc.length>2 ? pc.length+" catégories" : pc.join(" et "));
 }
 
@@ -626,15 +813,15 @@ function renderSave(){
   var pct = Number(cfg.epaObj)||0;
   var cible = t.tin * pct / 100;
   var fait = t.epa;
-  var dispo = t.solde;                    // revenus − toutes les sorties, épargne comprise
+  var dispo = t.solde;
   var prog = cible>0 ? Math.min(fait/cible*100, 100) : (fait>0?100:0);
   var col = fait>=cible && cible>0 ? "var(--ok)" : (fait>0 ? "var(--warn)" : "var(--ink-3)");
   var taux = t.tin>0 ? Math.round(fait/t.tin*100) : 0;
 
   var msg;
-  if(dispo > 0) msg = "Tu as encore <b>"+eur(dispo)+"</b> non dépensés. Tu peux les mettre de côté.";
-  else if(dispo < 0) msg = "Tu as dépensé <b>"+eur(-dispo)+"</b> de plus que tes revenus ce mois-ci.";
-  else msg = "Tout ce que tu as encaissé est affecté.";
+  if(dispo > 0) msg = "Il te reste <b>"+eur(dispo)+"</b> non dépensés. Tu peux les mettre de côté.";
+  else if(dispo < 0) msg = "Tu dépenses <b>"+eur(-dispo)+"</b> de plus que tes revenus ce mois-ci.";
+  else msg = "Tout ce que tu encaisses est affecté.";
 
   host.innerHTML =
     '<div class="bud" style="padding:16px">'+
@@ -720,6 +907,7 @@ function renderBudgets(){
 
 function renderTx(){
   var host = document.getElementById("tx-list");
+  var today = isoOf(new Date());
   var q = (document.getElementById("q").value||"").toLowerCase().trim();
   var list = ops(cur).slice().sort(function(a,b){
     return a.d===b.d ? (b.id>a.id?1:-1) : (a.d<b.d?1:-1);
@@ -740,20 +928,74 @@ function renderTx(){
   shown.forEach(function(o){
     var ty = T[o.t]||T["var"];
     var badge = "";
-    if(o.r){
-      if(recTotal(o)>0) badge = '<span class="tx-n'+(recDone(o)?' last':'')+'">'+
-                                recIdx(o)+'/'+recTotal(o)+'</span>';
-      else badge = ' ↻';
+    if(o.rid){
+      badge += recTotal(o)>0
+        ? '<span class="tx-n'+(recDone(o)?' last':'')+'">'+recIdx(o)+'/'+recTotal(o)+'</span>'
+        : '<span class="tx-n auto">auto</span>';
     }
+    if(o.d > today) badge += '<span class="tx-n soon">prévu</span>';
+    var sub = [dayLabel(o.d)];
+    if(o.ac) sub.push(esc(o.ac));
+    if(o.n) sub.push(esc(o.n));
+    if(o.rid && !o.gen) sub.push("modifié ce mois");
+    if(o.rid && recDone(o)) sub.push("dernière échéance");
     var b = document.createElement("button"); b.className="tx";
     b.innerHTML = '<span class="tx-b" style="background:'+ty.c+'"></span>'+
       '<span class="tx-m"><span class="tx-c">'+esc(o.c)+badge+'</span>'+
-      '<span class="tx-d">'+dayLabel(o.d)+(o.ac?" · "+esc(o.ac):"")+(o.n?" · "+esc(o.n):"")+
-      (o.r && recDone(o) ? " · dernier prélèvement" : "")+'</span></span>'+
+      '<span class="tx-d">'+sub.join(" · ")+'</span></span>'+
       '<span class="tx-v" style="color:'+(ty.sign>0?ty.c:"inherit")+'">'+
       (ty.sign>0?"+":"−")+" "+eur2(o.a)+'</span>';
     b.onclick = function(){ openSheet(o); };
     host.appendChild(b);
+  });
+}
+
+function renderRecs(){
+  var host = document.getElementById("recs");
+  var list = (cfg.recs||[]).slice().sort(function(a,b){
+    return (Number(a.day)||0) - (Number(b.day)||0);
+  });
+  if(!list.length){
+    host.innerHTML = '<div class="empty">Aucune série pour l\'instant. Coche « Revient automatiquement » en saisissant une opération.</div>';
+    return;
+  }
+  host.innerHTML = "";
+  list.forEach(function(r){
+    var ty = T[r.t] || T["var"];
+    var f = recFreq(r);
+    var sub = ["le "+(Number(r.day)||1)+(f===1 ? " de chaque mois" : " tous les "+f+" mois")];
+    sub.push("depuis "+monthLabel(r.start));
+    if(Number(r.count)>0){
+      var idx = occIndex(r, cur);
+      sub.push(idx>=1 && idx<=r.count ? "échéance "+idx+" sur "+r.count : r.count+" échéances");
+    }
+    if(r.until) sub.push("jusqu'à "+monthLabel(r.until));
+    if(r.pausedFrom) sub.push("en pause depuis "+monthLabel(r.pausedFrom));
+
+    var d = document.createElement("div"); d.className = "rec-item";
+    d.innerHTML =
+      '<div class="tx">'+
+        '<span class="tx-b" style="background:'+ty.c+'"></span>'+
+        '<span class="tx-m"><span class="tx-c">'+esc(r.c)+(r.n?' <span class="tx-n">'+esc(r.n)+'</span>':'')+'</span>'+
+        '<span class="tx-d">'+esc(sub.join(" · "))+'</span></span>'+
+        '<span class="tx-v" style="color:'+(ty.sign>0?ty.c:"inherit")+'">'+
+          (ty.sign>0?"+":"−")+" "+eur2(r.a)+'</span>'+
+      '</div>'+
+      '<div class="rec-acts">'+
+        '<button class="mini act-ed">Modifier la série</button>'+
+        '<button class="mini act-pa">'+(r.pausedFrom?"Reprendre":"Mettre en pause")+'</button>'+
+        '<button class="mini act-rm" style="color:var(--bad)">Supprimer</button>'+
+      '</div>';
+    d.querySelector(".act-ed").onclick = function(){ openSheet(null, r); };
+    d.querySelector(".act-pa").onclick = function(){
+      if(r.pausedFrom){ r.pausedFrom = ""; saveCfg(); renderAll(); toast("Série reprise"); }
+      else { r.pausedFrom = cur; saveCfg(); renderAll(); toast("En pause à partir de "+monthLabel(cur)); }
+    };
+    d.querySelector(".act-rm").onclick = function(){
+      if(!confirm("Supprimer « "+r.c+" » ? Toutes ses échéances disparaîtront de tous les mois.")) return;
+      deleteRec(r.id); renderAll(); toast("Série supprimée");
+    };
+    host.appendChild(d);
   });
 }
 
@@ -930,7 +1172,8 @@ function renderSettings(){
         Object.keys(months).forEach(function(k){
           used += months[k].filter(function(o){return o.t===ty.k;}).length;
         });
-        if(used){ toast(used+" opération"+(used>1?"s utilisent":" utilise")+" ce type"); return; }
+        used += (cfg.recs||[]).filter(function(r){return r.t===ty.k;}).length;
+        if(used){ toast(used+" élément"+(used>1?"s utilisent":" utilise")+" ce type"); return; }
         cfg.userTypes = cfg.userTypes.filter(function(u){return u.k!==ty.k;});
         delete cfg.cats[ty.k]; if(cfg.typeNames) delete cfg.typeNames[ty.k];
         buildTypes(); saveCfg(); renderAll(); toast("Type supprimé");
@@ -988,6 +1231,9 @@ function renameAcc(oldN, newN){
     months[k].forEach(function(o){ if(o.ac===oldN){ o.ac=newN; ch=true; } });
     if(ch) saveMonth(k);
   });
+  var rc=false;
+  (cfg.recs||[]).forEach(function(r){ if(r.ac===oldN){ r.ac=newN; rc=true; } });
+  if(rc) saveCfg();
 }
 function renameCat(oldN, newN){
   Object.keys(months).forEach(function(k){
@@ -995,6 +1241,7 @@ function renameCat(oldN, newN){
     months[k].forEach(function(o){ if(o.c===oldN){ o.c=newN; ch=true; } });
     if(ch) saveMonth(k);
   });
+  (cfg.recs||[]).forEach(function(r){ if(r.c===oldN) r.c=newN; });
   if(cfg.bud[oldN]!==undefined){ cfg.bud[newN]=cfg.bud[oldN]; delete cfg.bud[oldN]; }
   (cfg.obj||[]).forEach(function(o){ if(o.k===oldN) o.k=newN; });
 }
@@ -1007,7 +1254,7 @@ function applyName(){
 function renderAll(){
   applyName();
   renderMonths(); renderHero(); renderSave(); renderTypeRows(); renderDonut();
-  renderBudgets(); renderTx(); renderYear(); renderObj(); renderSettings();
+  renderBudgets(); renderTx(); renderRecs(); renderYear(); renderObj(); renderSettings();
 }
 function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g, function(c){
   return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
@@ -1025,55 +1272,114 @@ function go(id){
 document.querySelectorAll("nav button[data-view]").forEach(function(b){
   b.onclick = function(){ go(b.dataset.view); };
 });
+document.getElementById("gorec").onclick = function(){
+  go("v-reg");
+  setTimeout(function(){
+    var el = document.getElementById("recs-title");
+    if(el) el.scrollIntoView({block:"start",behavior:"smooth"});
+  }, 60);
+};
 
 /* ============ feuille de saisie ============ */
 var draft = null;
+var SCOPES = [
+  {k:"one",  n:"Ce mois seulement"},
+  {k:"from", n:"À partir de ce mois"},
+  {k:"all",  n:"Toute la série"}
+];
 
-(function buildRecOptions(){
-  var sel = document.getElementById("s-rec-n");
-  var html = '<option value="0">Sans fin (loyer, abonnement…)</option>';
-  for(var i=2;i<=36;i++) html += '<option value="'+i+'">'+i+' mois'+
-    (i===3||i===4 ? ' (paiement en '+i+'x)' : '')+'</option>';
-  sel.innerHTML = html;
-})();
+function openSheet(op, rec){
+  editing = op || null; editingRec = rec || null;
+  var mode = rec ? "rec" : (op ? ((op.gen||op.rid) ? "occ" : "op") : "new");
+  var d = new Date(), base;
 
-function openSheet(op){
-  editing = op || null;
-  var d = new Date();
-  var iso = op ? op.d : (cur === ymKey(d) ? isoOf(d) : cur+"-01");
-  draft = op ? {t:op.t, c:op.c, ac:op.ac, d:op.d, n:op.n||"", r:!!op.r,
-                rn:recTotal(op), ri:recIdx(op), s:String(Math.round(op.a*100))}
-             : {t:"var", c:cfg.cats["var"][0]||"", ac:cfg.accs[0]||"", d:iso, n:"", r:false,
-                rn:0, ri:1, s:""};
-  document.getElementById("s-title").textContent = op ? "Modifier" : "Nouvelle opération";
-  document.getElementById("s-del").hidden = !op;
+  if(rec){
+    var day = Math.min(Math.max(1, Number(rec.day)||1), daysIn(rec.start));
+    base = {t:rec.t, c:rec.c, ac:rec.ac, d:rec.start+"-"+String(day).padStart(2,"0"),
+            n:rec.n||"", s:String(Math.round(rec.a*100)), r:true,
+            freq:recFreq(rec),
+            endMode: Number(rec.count)>0 ? "count" : (rec.until ? "until" : "none"),
+            count:Number(rec.count)||0, until:rec.until||"", scope:"all"};
+  } else if(op){
+    var r0 = op.rid ? getRec(op.rid) : null;
+    base = {t:op.t, c:op.c, ac:op.ac, d:op.d, n:op.n||"", s:String(Math.round(op.a*100)),
+            r: !!op.rid, freq: r0?recFreq(r0):1,
+            endMode: r0 ? (Number(r0.count)>0 ? "count" : (r0.until?"until":"none")) : "none",
+            count: r0?(Number(r0.count)||0):0, until: r0?(r0.until||""):"", scope:"one"};
+  } else {
+    var iso = (cur === ymKey(d)) ? isoOf(d) : cur+"-01";
+    base = {t:"var", c:cfg.cats["var"][0]||"", ac:cfg.accs[0]||"", d:iso, n:"", s:"",
+            r:false, freq:1, endMode:"none", count:0, until:"", scope:"one"};
+  }
+  base.mode = mode;
+  draft = base;
+
+  document.getElementById("s-title").textContent =
+    rec ? "Série récurrente" : (op ? "Modifier" : "Nouvelle opération");
+  document.getElementById("s-del").hidden = !(op || rec);
   document.getElementById("s-date").value = draft.d;
   document.getElementById("s-note").value = draft.n;
   document.getElementById("s-rec").checked = draft.r;
+  document.getElementById("s-rec-sw").hidden = (mode==="occ" || mode==="rec");
   paintSheet();
   document.getElementById("sheet").classList.add("open");
 }
-function isoOf(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
-function closeSheet(){ document.getElementById("sheet").classList.remove("open"); editing=null; }
-
+function closeSheet(){
+  document.getElementById("sheet").classList.remove("open");
+  editing = null; editingRec = null;
+}
 function amountVal(){ return (Number(draft.s)||0)/100; }
+
+function paintScope(){
+  var box = document.getElementById("s-scope-box");
+  box.hidden = (draft.mode !== "occ");
+  if(box.hidden) return;
+  var host = document.getElementById("s-scope"); host.innerHTML = "";
+  SCOPES.forEach(function(s){
+    var b = document.createElement("button"); b.className="chip"; b.textContent = s.n;
+    b.setAttribute("aria-pressed", draft.scope===s.k ? "true":"false");
+    b.onclick = function(){ draft.scope = s.k; paintSheet(); };
+    host.appendChild(b);
+  });
+  var ym = editing ? editing.d.slice(0,7) : cur;
+  var txt = draft.scope==="one"
+    ? "Seule l'échéance de "+monthLabel(ym)+" change. Les autres mois gardent leur montant."
+    : (draft.scope==="from"
+      ? "Les mois avant "+monthLabel(ym)+" gardent leur ancien montant, "+monthLabel(ym)+" et les suivants prennent le nouveau."
+      : "Tous les mois de la série sont mis à jour, y compris les mois passés.");
+  document.getElementById("s-scope-info").textContent = txt;
+}
 
 function paintRec(){
   var box = document.getElementById("s-rec-box");
-  box.hidden = !draft.r;
-  if(!draft.r) return;
-  var sel = document.getElementById("s-rec-n");
-  sel.value = String(draft.rn||0);
-  var info = document.getElementById("s-rec-info");
-  if(!draft.rn){
-    info.textContent = "La charge sera reportée chaque mois, sans limite.";
-    return;
+  var showRec = draft.r && !(draft.mode==="occ" && draft.scope==="one");
+  box.hidden = !showRec;
+  document.getElementById("s-date-lab").textContent =
+    draft.r ? (draft.mode==="occ" ? "Date de cette échéance" : "Première échéance") : "Date";
+  if(!showRec) return;
+
+  document.getElementById("s-freq").value = String(draft.freq||1);
+  document.getElementById("s-end").value = draft.endMode;
+  document.getElementById("s-end-count").hidden = (draft.endMode !== "count");
+  document.getElementById("s-end-until").hidden = (draft.endMode !== "until");
+  document.getElementById("s-count").value = draft.count || "";
+  document.getElementById("s-until").value = draft.until || "";
+
+  var day = Number(draft.d.slice(8,10));
+  var f = Math.max(1, Number(draft.freq)||1);
+  var txt = "Le "+day+(f===1 ? " de chaque mois" : " tous les "+f+" mois")+
+            ", à partir de "+monthLabel(draft.d.slice(0,7))+". ";
+  if(draft.endMode==="count" && draft.count>0){
+    txt += draft.count+" échéances au total";
+    if(amountVal()>0) txt += ", soit "+eur2(amountVal()*draft.count)+" en tout.";
+    else txt += ".";
+  } else if(draft.endMode==="until" && draft.until){
+    txt += "Dernier mois : "+monthLabel(draft.until)+".";
+  } else {
+    txt += "Sans date de fin.";
   }
-  var reste = Math.max(0, draft.rn - draft.ri);
-  var tot = amountVal() * draft.rn;
-  info.innerHTML = "Prélèvement <b>"+draft.ri+" sur "+draft.rn+"</b> · "+
-    (reste ? "il en restera "+reste+" après celui-ci" : "c'est le dernier, la charge s'arrêtera")+
-    (amountVal()>0 ? "<br>Coût total : <b>"+eur2(tot)+"</b>" : "");
+  if(day>28) txt += " Les mois plus courts prendront leur dernier jour.";
+  document.getElementById("s-rec-info").textContent = txt;
 }
 
 function paintSheet(){
@@ -1108,6 +1414,8 @@ function paintSheet(){
     b.onclick = function(){ draft.ac=a; paintSheet(); };
     as.appendChild(b);
   });
+
+  paintScope();
   paintRec();
   document.getElementById("s-save").disabled = !(amountVal()>0 && draft.c);
 }
@@ -1127,72 +1435,147 @@ function paintSheet(){
 })();
 
 document.getElementById("s-close").onclick = closeSheet;
-document.getElementById("s-date").onchange = function(e){ draft.d = e.target.value; };
+document.getElementById("s-date").onchange = function(e){ draft.d = e.target.value || draft.d; paintSheet(); };
 document.getElementById("s-note").oninput  = function(e){ draft.n = e.target.value; };
 document.getElementById("s-rec").onchange  = function(e){
   draft.r = e.target.checked;
-  if(!draft.r){ draft.rn = 0; draft.ri = 1; }
+  if(!draft.r){ draft.endMode="none"; draft.count=0; draft.until=""; }
   paintSheet();
 };
-document.getElementById("s-rec-n").onchange = function(e){
-  draft.rn = Math.max(0, Number(e.target.value)||0);
-  if(draft.rn && draft.ri > draft.rn) draft.ri = draft.rn;
+document.getElementById("s-freq").onchange = function(e){
+  draft.freq = Math.max(1, Number(e.target.value)||1); paintRec();
+};
+document.getElementById("s-end").onchange = function(e){
+  draft.endMode = e.target.value;
+  if(draft.endMode==="count" && !draft.count) draft.count = 4;
+  if(draft.endMode==="until" && !draft.until) draft.until = ymAdd(draft.d.slice(0,7), 11);
   paintRec();
 };
+document.getElementById("s-count").onchange = function(e){
+  draft.count = Math.max(1, Math.min(600, Number(e.target.value)||1));
+  e.target.value = draft.count; paintRec();
+};
+document.getElementById("s-until").onchange = function(e){ draft.until = e.target.value; paintRec(); };
 document.getElementById("open-add").onclick = function(){ openSheet(null); };
+
+/* --- construit / met à jour une série à partir du brouillon --- */
+function recFromDraft(target){
+  var r = target || {id:uid(), i0:1, pausedFrom:""};
+  r.t = draft.t; r.c = draft.c; r.ac = draft.ac; r.n = draft.n;
+  r.a = amountVal();
+  r.day = Number(draft.d.slice(8,10));
+  r.freq = Math.max(1, Number(draft.freq)||1);
+  r.count = draft.endMode==="count" ? Math.max(1, Number(draft.count)||1) : 0;
+  r.until = draft.endMode==="until" ? (draft.until||"") : "";
+  if(!r.i0) r.i0 = 1;
+  if(r.pausedFrom === undefined) r.pausedFrom = "";
+  return r;
+}
 
 document.getElementById("s-save").onclick = function(){
   var a = amountVal(); if(!(a>0) || !draft.c) return;
-  var key = draft.d.slice(0,7);
-  if(editing){
-    var old = editing.d.slice(0,7);
-    months[old] = ops(old).filter(function(o){return o.id!==editing.id;});
-    saveMonth(old);
+  var ym = draft.d.slice(0,7);
+
+  /* --- édition directe d'une série --- */
+  if(draft.mode === "rec" && editingRec){
+    recFromDraft(editingRec);
+    editingRec.start = ym;
+    saveCfg(); closeSheet(); renderAll(); toast("Série mise à jour"); return;
   }
-  if(!months[key]) months[key]=[];
-  months[key].push({id: editing? editing.id : uid(), d:draft.d, t:draft.t, c:draft.c,
-                    a:a, ac:draft.ac, n:draft.n, r:draft.r,
-                    rn: draft.r ? draft.rn : 0, ri: draft.r ? draft.ri : 1});
-  saveMonth(key);
-  if(key!==cur && key.slice(0,4)===cur.slice(0,4)) cur = key;
+
+  /* --- édition d'une échéance --- */
+  if(draft.mode === "occ" && editing){
+    var rec = getRec(editing.rid);
+    var src = editing.d.slice(0,7);
+
+    if(rec && draft.scope === "all"){
+      recFromDraft(rec);
+      saveCfg(); closeSheet(); renderAll(); toast("Toute la série est à jour"); return;
+    }
+    if(rec && draft.scope === "from"){
+      if(ymDiff(rec.start, src) <= 0){
+        recFromDraft(rec); rec.start = ym;
+        saveCfg(); closeSheet(); renderAll(); toast("Série mise à jour"); return;
+      }
+      var idx = occIndex(rec, src);
+      rec.until = ymAdd(src, -1);
+      var nr = recFromDraft(null);
+      nr.start = ym; nr.i0 = idx;
+      cfg.recs.push(nr);
+      saveCfg(); closeSheet(); renderAll();
+      toast("Nouveau montant à partir de "+monthLabel(ym)); return;
+    }
+    /* ce mois seulement */
+    if(ym !== src){
+      putTomb(src, editing.rid);
+      if(!months[ym]) months[ym] = [];
+      months[ym].push({id:uid(), d:draft.d, t:draft.t, c:draft.c, a:a,
+                       ac:draft.ac, n:draft.n, r:false, rn:0, ri:1});
+      saveMonth(ym);
+    } else {
+      putOverride(ym, editing.rid, {d:draft.d, t:draft.t, c:draft.c, a:a,
+                                    ac:draft.ac, n:draft.n,
+                                    rn:recTotal(editing), ri:recIdx(editing)});
+    }
+    if(ym !== src && cur === src) cur = ym;
+    closeSheet(); renderAll(); toast("Modifié pour "+monthLabel(src)); return;
+  }
+
+  /* --- création d'une série depuis une saisie --- */
+  if(draft.r){
+    if(editing) removeOp(editing);
+    var created = recFromDraft(null);
+    created.start = ym;
+    cfg.recs = cfg.recs || [];
+    cfg.recs.push(created);
+    var dup = absorb(created);
+    saveCfg(); closeSheet();
+    if(ym.slice(0,4) === cur.slice(0,4)) cur = ym;
+    renderAll();
+    toast("Série créée" + (dup ? " · "+dup+" doublon"+(dup>1?"s":"")+" repris" : ""));
+    return;
+  }
+
+  /* --- opération simple --- */
+  if(editing) removeOp(editing);
+  if(!months[ym]) months[ym] = [];
+  months[ym].push({id: editing ? editing.id : uid(), d:draft.d, t:draft.t, c:draft.c,
+                   a:a, ac:draft.ac, n:draft.n, r:false, rn:0, ri:1});
+  saveMonth(ym);
+  if(ym!==cur && ym.slice(0,4)===cur.slice(0,4)) cur = ym;
+  var wasEdit = !!editing;
   closeSheet(); renderAll();
-  toast(editing ? "Opération modifiée" : "Opération enregistrée");
+  toast(wasEdit ? "Opération modifiée" : "Opération enregistrée");
 };
 
 document.getElementById("s-del").onclick = function(){
-  if(!editing) return;
-  var k = editing.d.slice(0,7);
-  months[k] = ops(k).filter(function(o){return o.id!==editing.id;});
-  saveMonth(k); closeSheet(); renderAll(); toast("Opération supprimée");
+  /* série entière depuis les réglages */
+  if(draft.mode === "rec" && editingRec){
+    if(!confirm("Supprimer cette série ? Toutes ses échéances disparaîtront.")) return;
+    deleteRec(editingRec.id); closeSheet(); renderAll(); toast("Série supprimée"); return;
+  }
+  /* une échéance */
+  if(draft.mode === "occ" && editing){
+    var src = editing.d.slice(0,7), rec = getRec(editing.rid);
+    if(draft.scope === "one" || !rec){
+      putTomb(src, editing.rid);
+      closeSheet(); renderAll(); toast("Échéance retirée de "+monthLabel(src)); return;
+    }
+    if(draft.scope === "from"){
+      if(ymDiff(rec.start, src) <= 0) deleteRec(rec.id);
+      else { rec.until = ymAdd(src, -1); saveCfg(); }
+      closeSheet(); renderAll(); toast("Série arrêtée à partir de "+monthLabel(src)); return;
+    }
+    if(!confirm("Supprimer toute la série ? Elle disparaîtra de tous les mois.")) return;
+    deleteRec(rec.id); closeSheet(); renderAll(); toast("Série supprimée"); return;
+  }
+  /* opération simple */
+  if(editing){ removeOp(editing); closeSheet(); renderAll(); toast("Opération supprimée"); }
 };
 
 /* ============ actions ============ */
 document.getElementById("q").oninput = renderTx;
 document.getElementById("more").onclick = function(){ showAll=!showAll; renderTx(); };
-
-document.getElementById("repeat").onclick = function(){
-  var ks = monthKeys(), i = ks.indexOf(cur);
-  if(i<=0){ toast("Aucun mois précédent dans l'année"); return; }
-  var rec = ops(ks[i-1]).filter(function(o){return o.r;});
-  if(!rec.length){ toast("Aucune charge marquée « chaque mois »"); return; }
-  var prev = rec.filter(function(o){ return !recDone(o); });
-  if(!prev.length){ toast("Les paiements échelonnés sont terminés"); return; }
-  if(!months[cur]) months[cur]=[];
-  var added = 0, fini = rec.length - prev.length;
-  prev.forEach(function(o){
-    var exists = months[cur].some(function(x){return x.c===o.c && x.r && Math.abs(x.a-o.a)<0.01;});
-    if(exists) return;
-    var day = Math.min(Number(o.d.slice(8,10)), 28);
-    months[cur].push({id:uid(), d:cur+"-"+String(day).padStart(2,"0"), t:o.t, c:o.c,
-                      a:o.a, ac:o.ac, n:o.n, r:true,
-                      rn:recTotal(o), ri:recIdx(o)+1});
-    added++;
-  });
-  saveMonth(cur); renderAll();
-  if(!added) toast("Elles sont déjà là");
-  else toast(added+" charge"+(added>1?"s":"")+" reportée"+(added>1?"s":"")+
-             (fini ? " · "+fini+" terminée"+(fini>1?"s":"") : ""));
-};
 
 document.getElementById("r-prov").onchange = function(e){
   cfg.prov = Math.max(0, Math.min(60, Number(e.target.value)||0));
@@ -1207,7 +1590,7 @@ document.getElementById("r-app").onchange = function(e){
   cfg.appName = v; e.target.value = v; saveCfg(); applyName();
 };
 document.getElementById("reset-lists").onclick = function(){
-  if(!confirm("Rétablir les listes d'origine ? Tes opérations ne sont pas touchées.")) return;
+  if(!confirm("Rétablir les listes d'origine ? Tes opérations et tes séries ne sont pas touchées.")) return;
   cfg.cats = clone(DEFAULTS.cats);
   cfg.accs = clone(DEFAULTS.accs);
   cfg.provCats = clone(DEFAULTS.provCats);
@@ -1238,8 +1621,8 @@ function csv(){
   monthKeys().forEach(function(k){
     ops(k).slice().sort(function(a,b){return a.d<b.d?-1:1;}).forEach(function(o){
       rows.push([o.d, tn(o.t), o.c, String(o.a).replace(".",","), o.ac||"", o.n||"",
-                 o.r?"oui":"non",
-                 (o.r && recTotal(o)) ? recIdx(o)+"/"+recTotal(o) : ""]);
+                 o.rid?"oui":"non",
+                 (o.rid && recTotal(o)) ? recIdx(o)+"/"+recTotal(o) : ""]);
     });
   });
   return "\uFEFF" + rows.map(function(r){
@@ -1263,21 +1646,26 @@ document.getElementById("export").onclick = doExport;
 document.getElementById("export2").onclick = doExport;
 
 document.getElementById("wipe").onclick = function(){
-  if(!confirm("Effacer toutes les opérations de "+MFULL[Number(cur.slice(5))-1]+" ?")) return;
-  months[cur]=[]; saveMonth(cur); renderAll(); toast("Mois effacé");
+  if(!confirm("Effacer les opérations saisies de "+MFULL[Number(cur.slice(5))-1]+
+              " ? Les séries récurrentes sont conservées.")) return;
+  months[cur]=[]; saveMonth(cur); renderAll(); toast("Saisies effacées · séries conservées");
 };
 
 var tt;
 function toast(m){
   var el = document.getElementById("toast");
   el.textContent = m; el.classList.add("on");
-  clearTimeout(tt); tt = setTimeout(function(){ el.classList.remove("on"); }, 1900);
+  clearTimeout(tt); tt = setTimeout(function(){ el.classList.remove("on"); }, 2200);
 }
 
 /* ============ démarrage ============ */
 loadLocal();
+var mig = migrateRecs();
 applyTheme();
 renderAll();
+if(mig) setTimeout(function(){
+  toast(mig+" charge"+(mig>1?"s":"")+" transformée"+(mig>1?"s":"")+" en série automatique");
+}, 500);
 hydrate();
 })();
 </script>
