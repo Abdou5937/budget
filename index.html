@@ -64,6 +64,10 @@ button{background:none;border:0;cursor:pointer}
 .top-in{display:flex;align-items:baseline;justify-content:space-between;padding:14px 16px 6px}
 .app-name{font-family:'Barlow Semi Condensed';font-weight:700;font-size:21px;letter-spacing:-.01em}
 .sync{font-size:12px;color:var(--ink-3)}
+.yearpick{display:flex;align-items:center;gap:2px}
+.yearpick button{width:32px;height:32px;border-radius:8px;font-size:22px;line-height:1;
+  color:var(--ink-2);border:1px solid var(--line);background:var(--card)}
+.yearpick span{min-width:52px;text-align:center;font-weight:600;font-size:17px}
 .months{display:flex;gap:6px;overflow-x:auto;padding:4px 16px 12px;scrollbar-width:none}
 .months::-webkit-scrollbar{display:none}
 .m-tab{flex:0 0 auto;padding:7px 13px;border-radius:999px;border:1px solid var(--line);
@@ -128,6 +132,9 @@ h3{font-family:'Barlow Semi Condensed';font-size:14px;font-weight:600;margin:0 0
 .tx-m{flex:1;min-width:0}
 .tx-c{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tx-d{font-size:12px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec{display:inline-block;margin-left:6px;padding:1px 6px 2px;border-radius:999px;
+  font-size:11px;font-weight:600;vertical-align:1px;white-space:nowrap;
+  background:var(--fix-w);color:var(--fix)}
 .tx-v{font-family:'Barlow Semi Condensed';font-weight:600;font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .empty{padding:26px 16px;text-align:center;color:var(--ink-3);font-size:14px}
 .search{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:var(--r-s);
@@ -176,6 +183,7 @@ nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
 .chip{padding:9px 13px;border-radius:999px;border:1px solid var(--line);background:var(--card);
   font-size:14px}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chip-new{border-style:dashed;color:var(--ink-2);font-weight:500}
 .field{margin-top:14px}
 .field label{display:block;font-size:13px;color:var(--ink-2);margin-bottom:6px}
 .field input[type=text],.field input[type=date],.field input[type=number],.field select{
@@ -225,7 +233,11 @@ nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
 <header class="top">
   <div class="top-in">
     <div class="app-name">Mon budget</div>
-    <div class="sync" id="sync">Sur cet appareil</div>
+    <div class="yearpick">
+      <button id="y-prev" aria-label="Année précédente">‹</button>
+      <span id="y-lab" class="num">2026</span>
+      <button id="y-next" aria-label="Année suivante">›</button>
+    </div>
   </div>
   <div class="months" id="months"></div>
 </header>
@@ -284,7 +296,7 @@ nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
     <h2>Totaux par catégorie de flux</h2>
     <div class="card rows" id="y-types"></div>
     <h2>Sauvegarde</h2>
-    <button class="btn ghost" id="export">Exporter l'année en CSV</button>
+    <button class="btn ghost" id="export">Sauvegarder en CSV</button>
   </section>
 
   <!-- ======= OBJECTIFS ======= -->
@@ -293,14 +305,16 @@ nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
     <div class="card" id="obj-list"></div>
     <div class="card" style="margin-top:12px">
       <div class="pad">
-        <h3>Nouveau projet</h3>
+        <h3 id="o-title">Nouveau projet</h3>
         <div class="field"><label for="o-n">Nom du projet</label>
           <input type="text" id="o-n" placeholder="Camionnette"></div>
         <div class="field"><label for="o-c">Montant à atteindre</label>
           <input type="number" id="o-c" inputmode="decimal" placeholder="8000"></div>
         <div class="field"><label for="o-k">Alimenté par la catégorie d'épargne</label>
-          <select id="o-k"></select></div>
+          <select id="o-k"></select>
+          <button class="mini" id="o-new" style="margin-top:8px">+ Créer une nouvelle enveloppe d'épargne</button></div>
         <button class="btn" id="o-add" style="margin-top:14px">Créer le projet</button>
+        <button class="btn ghost" id="o-cancel" style="margin-top:8px" hidden>Annuler la modification</button>
       </div>
     </div>
     <p class="help">La progression se calcule toute seule à partir des versements d'épargne que tu saisis dans la catégorie choisie.</p>
@@ -334,7 +348,7 @@ nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
     <div id="cats"></div>
 
     <h2>Budgets mensuels</h2>
-    <div class="card" id="budset"></div>
+    <div id="budset"></div>
     <p class="help">Laisse à zéro une catégorie que tu ne veux pas plafonner.</p>
 
     <h2>Apparence</h2>
@@ -348,8 +362,12 @@ nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
     </div>
 
     <h2>Données</h2>
-    <button class="btn ghost" id="export2">Exporter l'année en CSV</button>
+    <button class="btn ghost" id="export2">Sauvegarder tout en CSV</button>
+    <button class="btn ghost" id="import" style="margin-top:8px">Importer un fichier CSV</button>
+    <input type="file" id="import-file" accept=".csv,text/csv" hidden>
+    <p class="help">Exporte de temps en temps et garde le fichier ailleurs que sur le téléphone. C'est ta seule sauvegarde.</p>
     <button class="btn danger" id="wipe" style="margin-top:8px">Effacer le mois affiché</button>
+    <button class="btn danger" id="wipe-all" style="margin-top:8px">Tout effacer</button>
   </section>
 </main>
 
@@ -473,7 +491,6 @@ function hydrate(){
   claude.use("db").then(function(d){
     if(!d) return;
     db = d;
-    document.getElementById("sync").textContent = "Sauvegardé";
     return d.doc("config/main").get().then(function(s){
       if(s.exists){
         var v = s.data();
@@ -538,7 +555,8 @@ function byCat(list, types){
 
 /* ============ rendu ============ */
 function renderMonths(){
-  var host = document.getElementById("months"), y = cur.slice(0,4);
+  document.getElementById("y-lab").textContent = cur.slice(0,4);
+  var host = document.getElementById("months");
   host.innerHTML = "";
   monthKeys().forEach(function(k,i){
     var b = document.createElement("button");
@@ -703,7 +721,8 @@ function renderTx(){
     var ty = T[o.t]||T["var"];
     var b = document.createElement("button"); b.className="tx";
     b.innerHTML = '<span class="tx-b" style="background:'+ty.c+'"></span>'+
-      '<span class="tx-m"><span class="tx-c">'+esc(o.c)+(o.r?' ↻':'')+'</span>'+
+      '<span class="tx-m"><span class="tx-c">'+esc(o.c)+
+      (o.r?'<span class="rec">↻ chaque mois</span>':'')+'</span>'+
       '<span class="tx-d">'+dayLabel(o.d)+(o.ac?" · "+esc(o.ac):"")+(o.n?" · "+esc(o.n):"")+'</span></span>'+
       '<span class="tx-v" style="color:'+(o.t==="rev"?ty.c:"inherit")+'">'+
       (o.t==="rev"?"+":"−")+" "+eur2(o.a)+'</span>';
@@ -755,7 +774,9 @@ function renderObj(){
   var host = document.getElementById("obj-list");
   var all = []; monthKeys().forEach(function(k){ all = all.concat(ops(k)); });
   var sel = document.getElementById("o-k");
+  var prev = sel.value;
   sel.innerHTML = cfg.cats.epa.map(function(c){return '<option>'+esc(c)+'</option>';}).join("");
+  if(prev && cfg.cats.epa.indexOf(prev)>=0) sel.value = prev;
 
   if(!(cfg.obj||[]).length){
     host.innerHTML = '<div class="empty">Aucun projet pour l\'instant.</div>'; return;
@@ -769,12 +790,41 @@ function renderObj(){
     d.innerHTML = '<div class="bud-h"><span>'+esc(o.nom)+'</span><b>'+eur(got)+' / '+eur(o.cible)+'</b></div>'+
       '<div class="track"><i style="width:'+pct+'%;background:var(--epa)"></i></div>'+
       '<div class="pct">'+(got>=o.cible ? "Objectif atteint" : "Encore "+eur(o.cible-got)+" · via « "+esc(o.k)+" »")+
-      ' <button class="x" data-i="'+i+'" style="float:right;margin-top:-6px">✕</button></div>';
+      ' <button class="x" data-i="'+i+'" style="float:right;margin-top:-6px">✕</button>'+
+      ' <button class="ed" data-i="'+i+'" style="float:right;margin-top:-6px;margin-right:10px">✎</button></div>';
     host.appendChild(d);
   });
   host.querySelectorAll(".x").forEach(function(b){
-    b.onclick = function(){ cfg.obj.splice(Number(b.dataset.i),1); saveCfg(); renderObj(); };
+    b.onclick = function(){
+      var j = Number(b.dataset.i);
+      if(!confirm("Supprimer le projet « "+cfg.obj[j].nom+" » ? Tes versements d'épargne ne sont pas effacés.")) return;
+      cfg.obj.splice(j,1); if(editObj!==null) cancelObj(); saveCfg(); renderObj();
+    };
   });
+  host.querySelectorAll(".ed").forEach(function(b){
+    b.onclick = function(){ startEditObj(Number(b.dataset.i)); };
+  });
+}
+
+var editObj = null;
+function startEditObj(i){
+  var o = cfg.obj[i]; if(!o) return;
+  editObj = i;
+  document.getElementById("o-title").textContent = "Modifier le projet";
+  document.getElementById("o-n").value = o.nom;
+  document.getElementById("o-c").value = o.cible;
+  document.getElementById("o-k").value = o.k;
+  document.getElementById("o-add").textContent = "Enregistrer les modifications";
+  document.getElementById("o-cancel").hidden = false;
+  document.getElementById("o-n").scrollIntoView({behavior:"smooth", block:"center"});
+}
+function cancelObj(){
+  editObj = null;
+  document.getElementById("o-title").textContent = "Nouveau projet";
+  document.getElementById("o-n").value = "";
+  document.getElementById("o-c").value = "";
+  document.getElementById("o-add").textContent = "Créer le projet";
+  document.getElementById("o-cancel").hidden = true;
 }
 
 function renderSettings(){
@@ -802,8 +852,15 @@ function renderSettings(){
   cfg.accs.forEach(function(a,i){
     var l = document.createElement("div"); l.className="list-line";
     l.innerHTML = '<input type="text" value="'+esc(a)+'"><button class="x">✕</button>';
-    l.querySelector("input").onchange = function(e){ cfg.accs[i]=e.target.value.trim()||a; saveCfg(); };
-    l.querySelector(".x").onclick = function(){ cfg.accs.splice(i,1); saveCfg(); renderSettings(); };
+    l.querySelector("input").onchange = function(e){
+      var nv = e.target.value.trim(); if(!nv){ e.target.value = a; return; }
+      renameAcc(a, nv); cfg.accs[i]=nv; saveCfg(); renderAll();
+    };
+    l.querySelector(".x").onclick = function(){
+      var n = countUse("ac", a);
+      if(n && !confirm(n+" opération"+(n>1?"s utilisent":" utilise")+" le compte « "+a+" ». Le supprimer quand même ?")) return;
+      cfg.accs.splice(i,1); saveCfg(); renderSettings();
+    };
     accs.appendChild(l);
   });
   accs.appendChild(adder("Nouveau compte", function(v){ cfg.accs.push(v); saveCfg(); renderSettings(); }));
@@ -823,6 +880,8 @@ function renderSettings(){
         renameCat(name, nv); cfg.cats[ty.k][i]=nv; saveCfg(); renderAll();
       };
       l.querySelector(".x").onclick = function(){
+        var n = countUse("c", name);
+        if(n && !confirm(n+" opération"+(n>1?"s utilisent":" utilise")+" « "+name+" ». La supprimer quand même ? Les opérations seront conservées.")) return;
         cfg.cats[ty.k].splice(i,1); saveCfg(); renderSettings();
       };
       c.appendChild(l);
@@ -834,17 +893,26 @@ function renderSettings(){
   });
 
   var bs = document.getElementById("budset"); bs.innerHTML="";
-  cfg.cats.fix.concat(cfg.cats["var"]).forEach(function(c){
-    var l = document.createElement("div"); l.className="list-line";
-    l.innerHTML = '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c)+'</span>'+
-      '<input type="number" inputmode="decimal" min="0" value="'+(cfg.bud[c]||"")+'" placeholder="0">'+
-      '<span style="color:var(--ink-3)">€</span>';
-    l.querySelector("input").onchange = function(e){
-      var v = Number(e.target.value)||0;
-      if(v>0) cfg.bud[c]=v; else delete cfg.bud[c];
-      saveCfg(); renderBudgets();
-    };
-    bs.appendChild(l);
+  ["fix","var","epa","cre"].forEach(function(tk){
+    var ty = T[tk];
+    var h = document.createElement("h3");
+    h.innerHTML = '<span class="dot" style="background:'+ty.c+';display:inline-block;margin-right:7px"></span>'+ty.n;
+    h.style.margin = "16px 0 8px";
+    bs.appendChild(h);
+    var c = document.createElement("div"); c.className="card";
+    cfg.cats[tk].forEach(function(nom){
+      var l = document.createElement("div"); l.className="list-line";
+      l.innerHTML = '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(nom)+'</span>'+
+        '<input type="number" inputmode="decimal" min="0" value="'+(cfg.bud[nom]||"")+'" placeholder="0">'+
+        '<span style="color:var(--ink-3)">€</span>';
+      l.querySelector("input").onchange = function(e){
+        var v = Number(e.target.value)||0;
+        if(v>0) cfg.bud[nom]=v; else delete cfg.bud[nom];
+        saveCfg(); renderBudgets();
+      };
+      c.appendChild(l);
+    });
+    bs.appendChild(c);
   });
 }
 
@@ -866,6 +934,21 @@ function renameCat(oldN, newN){
   });
   if(cfg.bud[oldN]!==undefined){ cfg.bud[newN]=cfg.bud[oldN]; delete cfg.bud[oldN]; }
   (cfg.obj||[]).forEach(function(o){ if(o.k===oldN) o.k=newN; });
+  var i = (cfg.provCats||[]).indexOf(oldN); if(i>=0) cfg.provCats[i]=newN;
+}
+function renameAcc(oldN, newN){
+  Object.keys(months).forEach(function(k){
+    var ch=false;
+    months[k].forEach(function(o){ if(o.ac===oldN){ o.ac=newN; ch=true; } });
+    if(ch) saveMonth(k);
+  });
+}
+function countUse(champ, val){
+  var n = 0;
+  Object.keys(months).forEach(function(k){
+    months[k].forEach(function(o){ if(o[champ]===val) n++; });
+  });
+  return n;
 }
 
 function renderAll(){
@@ -935,6 +1018,10 @@ function paintSheet(){
     b.onclick = function(){ draft.c=c; paintSheet(); };
     cs.appendChild(b);
   });
+  cs.appendChild(newChip("catégorie", function(v){
+    if(cfg.cats[draft.t].indexOf(v)<0) cfg.cats[draft.t].push(v);
+    draft.c = v; saveCfg(); paintSheet(); renderSettings();
+  }));
 
   var as = document.getElementById("s-accs"); as.innerHTML="";
   cfg.accs.forEach(function(a){
@@ -943,7 +1030,25 @@ function paintSheet(){
     b.onclick = function(){ draft.ac=a; paintSheet(); };
     as.appendChild(b);
   });
+  as.appendChild(newChip("compte", function(v){
+    if(cfg.accs.indexOf(v)<0) cfg.accs.push(v);
+    draft.ac = v; saveCfg(); paintSheet(); renderSettings();
+  }));
   document.getElementById("s-save").disabled = !(amountVal()>0 && draft.c);
+}
+
+function newChip(quoi, fn){
+  var b = document.createElement("button");
+  b.className = "chip chip-new";
+  b.textContent = "+ Nouvelle " + quoi;
+  b.onclick = function(){
+    var v = window.prompt("Nom de la nouvelle " + quoi + " :");
+    if(v === null) return;
+    v = v.trim();
+    if(!v) return;
+    fn(v);
+  };
+  return b;
 }
 
 (function buildKeys(){
@@ -991,13 +1096,23 @@ document.getElementById("s-del").onclick = function(){
 };
 
 /* ============ actions ============ */
+function shiftYear(d){
+  var y = Number(cur.slice(0,4)) + d;
+  if(y < 2000 || y > 2100) return;
+  cur = y + "-" + cur.slice(5);
+  showAll = false;
+  renderAll();
+}
+document.getElementById("y-prev").onclick = function(){ shiftYear(-1); };
+document.getElementById("y-next").onclick = function(){ shiftYear(1); };
+
 document.getElementById("q").oninput = renderTx;
 document.getElementById("more").onclick = function(){ showAll=!showAll; renderTx(); };
 
 document.getElementById("repeat").onclick = function(){
-  var ks = monthKeys(), i = ks.indexOf(cur);
-  if(i<=0){ toast("Aucun mois précédent dans l'année"); return; }
-  var prev = ops(ks[i-1]).filter(function(o){return o.r;});
+  var y = Number(cur.slice(0,4)), m = Number(cur.slice(5));
+  var pk = m===1 ? (y-1)+"-12" : y+"-"+String(m-1).padStart(2,"0");
+  var prev = ops(pk).filter(function(o){return o.r;});
   if(!prev.length){ toast("Aucune charge marquée « chaque mois »"); return; }
   if(!months[cur]) months[cur]=[];
   var added = 0;
@@ -1035,14 +1150,31 @@ document.getElementById("o-add").onclick = function(){
   var c = Number(document.getElementById("o-c").value)||0;
   var k = document.getElementById("o-k").value;
   if(!n || !(c>0)){ toast("Donne un nom et un montant"); return; }
-  cfg.obj = cfg.obj||[]; cfg.obj.push({nom:n, cible:c, k:k});
-  document.getElementById("o-n").value=""; document.getElementById("o-c").value="";
-  saveCfg(); renderObj(); toast("Projet créé");
+  cfg.obj = cfg.obj||[];
+  if(editObj!==null && cfg.obj[editObj]){
+    cfg.obj[editObj] = {nom:n, cible:c, k:k};
+    cancelObj(); saveCfg(); renderObj(); toast("Projet modifié");
+  } else {
+    cfg.obj.push({nom:n, cible:c, k:k});
+    document.getElementById("o-n").value=""; document.getElementById("o-c").value="";
+    saveCfg(); renderObj(); toast("Projet créé");
+  }
+};
+document.getElementById("o-cancel").onclick = cancelObj;
+
+document.getElementById("o-new").onclick = function(){
+  var v = prompt("Nom de la nouvelle enveloppe d'épargne :");
+  if(v===null) return;
+  v = v.trim(); if(!v) return;
+  if(cfg.cats.epa.indexOf(v)>=0){ document.getElementById("o-k").value = v; toast("Elle existe déjà"); return; }
+  cfg.cats.epa.push(v); saveCfg(); renderObj(); renderSettings();
+  document.getElementById("o-k").value = v;
+  toast("Enveloppe « "+v+" » créée");
 };
 
 function csv(){
   var rows = [["Date","Type","Catégorie","Montant","Compte","Note","Récurrent"]];
-  monthKeys().forEach(function(k){
+  Object.keys(months).sort().forEach(function(k){
     ops(k).slice().sort(function(a,b){return a.d<b.d?-1:1;}).forEach(function(o){
       rows.push([o.d, T[o.t].n, o.c, String(o.a).replace(".",","), o.ac||"", o.n||"", o.r?"oui":"non"]);
     });
@@ -1052,7 +1184,7 @@ function csv(){
   }).join("\r\n");
 }
 function doExport(){
-  var name = "budget-"+cur.slice(0,4)+".csv";
+  var name = "budget-sauvegarde-"+isoOf(new Date())+".csv";
   var data = csv();
   if(downloads){
     downloads.save({filename:name, data:data}).then(function(){ toast("Fichier enregistré"); })
@@ -1067,9 +1199,101 @@ function doExport(){
 document.getElementById("export").onclick = doExport;
 document.getElementById("export2").onclick = doExport;
 
+/* ---- import CSV ---- */
+function parseCSV(txt){
+  if(txt.charCodeAt(0)===0xFEFF) txt = txt.slice(1);
+  var rows=[], row=[], cell="", q=false, i=0;
+  var sep = (txt.split("\n")[0].split(";").length >= txt.split("\n")[0].split(",").length) ? ";" : ",";
+  while(i<txt.length){
+    var ch = txt[i];
+    if(q){
+      if(ch==='"'){ if(txt[i+1]==='"'){ cell+='"'; i++; } else q=false; }
+      else cell+=ch;
+    } else {
+      if(ch==='"') q=true;
+      else if(ch===sep){ row.push(cell); cell=""; }
+      else if(ch==="\n"){ row.push(cell); rows.push(row); row=[]; cell=""; }
+      else if(ch!=="\r") cell+=ch;
+    }
+    i++;
+  }
+  if(cell!=="" || row.length){ row.push(cell); rows.push(row); }
+  return rows.filter(function(r){ return r.some(function(c){return String(c).trim()!==""; }); });
+}
+
+function doImport(txt){
+  var rows = parseCSV(txt);
+  if(rows.length<2){ toast("Fichier vide ou illisible"); return; }
+  var nameToKey = {}; TYPES.forEach(function(t){ nameToKey[t.n.toLowerCase()] = t.k; });
+
+  var groupes = {}, total = 0, ignorees = 0;
+  rows.slice(1).forEach(function(r){
+    var d = String(r[0]||"").trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){ ignorees++; return; }
+    var t = nameToKey[String(r[1]||"").trim().toLowerCase()];
+    if(!t){ ignorees++; return; }
+    var a = Number(String(r[3]||"").replace(/\s/g,"").replace(",","."));
+    if(!isFinite(a)){ ignorees++; return; }
+    var k = d.slice(0,7);
+    (groupes[k] = groupes[k] || []).push({
+      id: uid(), d: d, t: t, c: String(r[2]||"Divers").trim(),
+      a: r2(Math.abs(a)), ac: String(r[4]||"").trim(),
+      n: String(r[5]||"").trim(),
+      r: /^(oui|yes|true|1)$/i.test(String(r[6]||"").trim())
+    });
+    total++;
+  });
+
+  var ks = Object.keys(groupes).sort();
+  if(!total){ toast("Aucune ligne exploitable"); return; }
+  if(!confirm(total+" opération"+(total>1?"s":"")+" sur "+ks.length+" mois ("+ks[0]+" à "+ks[ks.length-1]+").\n\n"+
+     "Le contenu de ces mois va être REMPLACÉ par le fichier. Les autres mois ne bougent pas.\n\nContinuer ?")) return;
+
+  ks.forEach(function(k){
+    months[k] = groupes[k];
+    saveMonth(k);
+    groupes[k].forEach(function(o){
+      if(o.c && cfg.cats[o.t].indexOf(o.c)<0) cfg.cats[o.t].push(o.c);
+      if(o.ac && cfg.accs.indexOf(o.ac)<0) cfg.accs.push(o.ac);
+    });
+  });
+  saveCfg();
+  cur = ks.indexOf(cur)>=0 ? cur : ks[ks.length-1];
+  showAll = false;
+  renderAll();
+  toast(total+" opération"+(total>1?"s":"")+" importée"+(total>1?"s":"")+(ignorees?" · "+ignorees+" ligne(s) ignorée(s)":""));
+}
+
+document.getElementById("import").onclick = function(){
+  document.getElementById("import-file").click();
+};
+document.getElementById("import-file").onchange = function(e){
+  var f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if(!f) return;
+  var fr = new FileReader();
+  fr.onload = function(){ try{ doImport(String(fr.result)); }catch(err){ toast("Fichier illisible"); } };
+  fr.onerror = function(){ toast("Lecture impossible"); };
+  fr.readAsText(f, "UTF-8");
+};
+
 document.getElementById("wipe").onclick = function(){
   if(!confirm("Effacer toutes les opérations de "+MFULL[Number(cur.slice(5))-1]+" ?")) return;
   months[cur]=[]; saveMonth(cur); renderAll(); toast("Mois effacé");
+};
+
+document.getElementById("wipe-all").onclick = function(){
+  if(!confirm("Effacer TOUTES tes opérations, toutes années confondues ?\n\nPense à exporter avant.")) return;
+  if(!confirm("Dernière confirmation. Cette action est définitive.")) return;
+  Object.keys(months).forEach(function(k){ months[k]=[]; saveMonth(k); });
+  try{
+    var del=[];
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i); if(k && k.indexOf("bm.m.")===0) del.push(k);
+    }
+    del.forEach(function(k){ localStorage.removeItem(k); });
+  }catch(e){}
+  months = {}; renderAll(); toast("Tout a été effacé");
 };
 
 var tt;
