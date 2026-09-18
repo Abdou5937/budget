@@ -848,14 +848,31 @@ function renderSave(){
 function renderTypeRows(){
   var list = ops(cur), t = totals(list), host = document.getElementById("type-rows");
   host.innerHTML = "";
-  TYPES.forEach(function(ty){
-    var n = list.filter(function(o){return o.t===ty.k;}).length;
-    var r = document.createElement("div"); r.className="row";
-    r.innerHTML = '<span class="dot" style="background:'+ty.c+'"></span>'+
-      '<span class="row-n">'+esc(tn(ty.k))+'<span class="row-sub">'+(n?n+" opération"+(n>1?"s":""):"aucune opération")+'</span></span>'+
+  var rows = TYPES.map(function(ty){
+    return {ty:ty, n:list.filter(function(o){return o.t===ty.k;}).length, v:t[ty.k]||0};
+  }).filter(function(r){ return r.n > 0; })
+    .sort(function(a,b){
+      if(a.ty.sign !== b.ty.sign) return b.ty.sign - a.ty.sign;
+      return b.v - a.v;
+    });
+  if(!rows.length){
+    host.innerHTML = '<div class="empty">Aucune opération ce mois-ci.</div>'; return;
+  }
+  rows.forEach(function(r){
+    var ty = r.ty;
+    var tot = ty.sign>0 ? t.tin : t.tout;
+    var part = tot>0 ? r.v/tot*100 : 0;
+    var d = document.createElement("div"); d.className="row";
+    d.innerHTML = '<span class="dot" style="background:'+ty.c+'"></span>'+
+      '<span class="row-n">'+esc(tn(ty.k))+
+        '<span class="row-sub">'+r.n+" opération"+(r.n>1?"s":"")+" · "+
+        Math.round(part)+' % des '+(ty.sign>0?"entrées":"sorties")+'</span>'+
+        '<span class="track" style="display:block;margin-top:6px">'+
+          '<i style="width:'+part+'%;background:'+ty.c+'"></i></span>'+
+      '</span>'+
       '<span class="row-v" style="color:'+(ty.sign>0?ty.c:"inherit")+'">'+
-      (ty.sign>0?"+":"−")+" "+eur(t[ty.k]||0)+'</span>';
-    host.appendChild(r);
+      (ty.sign>0?"+":"−")+" "+eur(r.v)+'</span>';
+    host.appendChild(d);
   });
 }
 
