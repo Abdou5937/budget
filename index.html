@@ -873,8 +873,8 @@ function hexRgb(h){
 function shade(baseVar, step){
   var hex = cssVal(baseVar);
   if(hex.charAt(0) !== "#" || !step) return hex;
-  var amt = [0,.28,.48,.64,.74][Math.min(step,4)];
-  var a = hexRgb(hex), b = hexRgb(cssVal("var(--paper)"));
+  var amt = [0,.38,.58,.72,.82][Math.min(step,4)];
+  var a = hexRgb(hex), b = hexRgb(cssVal("var(--ink)"));
   return "#" + a.map(function(v,i){
     var x = Math.round(v + (b[i]-v)*amt).toString(16);
     return x.length<2 ? "0"+x : x;
@@ -944,7 +944,11 @@ function renderTx(){
   var today = isoOf(new Date());
   var q = (document.getElementById("q").value||"").toLowerCase().trim();
   var list = ops(cur).slice().sort(function(a,b){
-    return a.d===b.d ? (b.id>a.id?1:-1) : (a.d<b.d?1:-1);
+    var sa = (T[a.t] && T[a.t].sign>0) ? 1 : 0;
+    var sb = (T[b.t] && T[b.t].sign>0) ? 1 : 0;
+    if(sa !== sb) return sb - sa;          // revenus en tête
+    if(Math.abs(b.a - a.a) > 0.005) return b.a - a.a;  // du plus élevé au plus faible
+    return a.d < b.d ? 1 : -1;             // à montant égal, le plus récent d'abord
   });
   if(q) list = list.filter(function(o){
     return (o.c+" "+(o.n||"")+" "+(o.ac||"")).toLowerCase().indexOf(q)>=0;
