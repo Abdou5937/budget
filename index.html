@@ -124,8 +124,8 @@ h3{font-family:'Barlow Semi Condensed';font-size:14px;font-weight:600;margin:0 0
 .tx-n{font-family:'Barlow Semi Condensed';font-weight:600;font-size:11px;padding:1px 6px;border-radius:999px;
   background:var(--line-2);color:var(--ink-2);margin-left:6px;vertical-align:1px;white-space:nowrap}
 .tx-n.last{background:var(--cre-w);color:var(--cre)}
-.tx-n.soon{background:var(--var-w);color:var(--var)}
-.tx-n.auto{background:var(--fix-w);color:var(--fix)}
+.tx-n.soon{background:transparent;border:1px dashed var(--line);color:var(--ink-2)}
+.tx-n.auto{background:var(--line-2);color:var(--ink-3)}
 .empty{padding:26px 16px;text-align:center;color:var(--ink-3);font-size:14px}
 .search{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:var(--r-s);
   background:var(--card);margin-bottom:10px}
@@ -859,23 +859,57 @@ function renderTypeRows(){
   });
 }
 
+/* ---- couleurs : une seule source, le type de flux ---- */
+function cssVal(v){
+  var m = String(v).match(/^var\((--[\w-]+)\)$/);
+  if(!m) return String(v);
+  return getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim() || "#8C97A3";
+}
+function hexRgb(h){
+  h = h.replace("#","");
+  if(h.length===3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function shade(baseVar, step){
+  var hex = cssVal(baseVar);
+  if(hex.charAt(0) !== "#" || !step) return hex;
+  var amt = [0,.28,.48,.64,.74][Math.min(step,4)];
+  var a = hexRgb(hex), b = hexRgb(cssVal("var(--paper)"));
+  return "#" + a.map(function(v,i){
+    var x = Math.round(v + (b[i]-v)*amt).toString(16);
+    return x.length<2 ? "0"+x : x;
+  }).join("");
+}
+
 function renderDonut(){
-  var data = byCat(ops(cur), outTypes().filter(function(x){return x.k!=="epa";})
-                                        .map(function(x){return x.k;})).slice(0,6);
+  var outK = outTypes().filter(function(x){return x.k!=="epa";}).map(function(x){return x.k;});
+  var m = {};
+  ops(cur).forEach(function(o){
+    if(outK.indexOf(o.t)<0) return;
+    if(!m[o.c]) m[o.c] = {c:o.c, v:0, t:o.t};
+    m[o.c].v += o.a;
+  });
+  var data = Object.keys(m).map(function(k){return m[k];})
+             .sort(function(a,b){return b.v-a.v;}).slice(0,6);
   var host = document.getElementById("donut-card");
   var sum = data.reduce(function(a,b){return a+b.v;},0);
   if(!sum){ host.innerHTML = '<div class="empty">Saisis une dépense pour voir la répartition.</div>'; return; }
-  var pal = ["var(--fix)","var(--var)","var(--cre)","var(--epa)","var(--rev)","var(--ink-3)"];
+  var seen = {};
+  data.forEach(function(d){
+    var step = (seen[d.t] === undefined) ? 0 : seen[d.t]+1;
+    seen[d.t] = step;
+    d.col = shade((T[d.t]||T["var"]).c, step);
+  });
   var R=52, C=2*Math.PI*R, off=0, segs="";
-  data.forEach(function(d,i){
+  data.forEach(function(d){
     var len = d.v/sum*C;
-    segs += '<circle cx="61" cy="61" r="'+R+'" fill="none" stroke="'+pal[i%6]+'" stroke-width="17" '+
+    segs += '<circle cx="61" cy="61" r="'+R+'" fill="none" stroke="'+d.col+'" stroke-width="17" '+
             'stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" '+
             'transform="rotate(-90 61 61)"/>';
     off += len;
   });
-  var leg = data.map(function(d,i){
-    return '<div><span class="dot" style="background:'+pal[i%6]+'"></span>'+
+  var leg = data.map(function(d){
+    return '<div><span class="dot" style="background:'+d.col+'"></span>'+
            '<span>'+esc(d.c)+'</span><b>'+Math.round(d.v/sum*100)+' %</b></div>';
   }).join("");
   host.innerHTML = '<div class="donut-wrap"><svg viewBox="0 0 122 122" width="122" height="122">'+segs+
@@ -1022,7 +1056,7 @@ function renderYear(){
     var b = document.createElement("button"); b.className="y-row";
     b.innerHTML = '<span class="y-m">'+MN[i].replace(".","")+'</span>'+
       '<span class="y-bars"><i style="width:'+(m.tin/max*100)+'%;background:var(--rev)"></i>'+
-      '<i style="width:'+(m.tout/max*100)+'%;background:var(--var)"></i></span>'+
+      '<i style="width:'+(m.tout/max*100)+'%;background:var(--ink-3)"></i></span>'+
       '<span class="y-v" style="color:'+(m.solde<0?"var(--bad)":(m.solde>0?"var(--rev)":"var(--ink-3)"))+'">'+
       eur(m.solde)+'</span>';
     b.onclick = function(){ cur=k; showAll=false; go("v-mois"); renderAll(); };
